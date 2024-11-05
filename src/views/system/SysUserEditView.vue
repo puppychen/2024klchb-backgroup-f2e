@@ -8,7 +8,7 @@
             <ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="#">系統維護與設定</a></li>
               <li class="breadcrumb-item"><a href="#">使用者管理</a></li>
-              <li class="breadcrumb-item active" aria-current="page">新增使用者</li>
+              <li class="breadcrumb-item active" aria-current="page">編輯使用者</li>
             </ol>
           </nav>
         </div>
@@ -17,7 +17,7 @@
         <AdminForm
           :formData="formData"
           :errorMessage="errorMessage"
-          submitButtonText="新增"
+          submitButtonText="更新"
           @clear="clearForm"
           @submit="submitData"
         />
@@ -30,13 +30,13 @@
 <script lang="ts">
 import FooterComponent from '@/components/layout/Footer.vue';
 import AdminForm from '@/components/AdminForm.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import apiClient from '@/utils/axios';
 import Swal from 'sweetalert2';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 export default {
-  name: 'SysUserAddView',
+  name: 'SysUserEditView',
   components: {
     FooterComponent,
     AdminForm
@@ -64,6 +64,16 @@ export default {
       };
       this.errorMessage = '';
     },
+    async fetchUserData() {
+      const userId = this.$route.params.uuid;
+      try {
+        const response = await apiClient.get(`/admin/${userId}`);
+        this.formData = response.data;
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        this.errorMessage = '無法獲取使用者資料';
+      }
+    },
     async submitData() {
       if (!this.formData.username || !this.formData.name || !this.formData.email) {
         this.errorMessage = '請輸入使用者資料';
@@ -74,22 +84,26 @@ export default {
       }
 
       try {
-        const response = await apiClient.post('/admin', this.formData);
-        console.log('User added:', response.data);
+        const userId = this.$route.params.uuid;
+        const response = await apiClient.patch(`/admin/${userId}`, this.formData);
+        console.log('User updated:', response.data);
         this.clearForm();
         Swal.fire({
           icon: 'success',
-          title: '新增成功',
-          text: '使用者已成功新增',
+          title: '更新成功',
+          text: '使用者資料已成功更新',
           confirmButtonText: '確定'
         }).then(() => {
           this.$router.push('/SysUserList');
         });
       } catch (error) {
-        console.error('Error adding user:', error);
-        this.errorMessage = '新增使用者失敗';
+        console.error('Error updating user:', error);
+        this.errorMessage = '更新使用者失敗';
       }
     }
+  },
+  mounted() {
+    this.fetchUserData();
   }
 };
 </script>

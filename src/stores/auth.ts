@@ -9,7 +9,7 @@ interface AuthState {
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('klchb_token');
     let name = null;
     let role = null;
 
@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     setToken(token: string) {
       this.token = token;
-      localStorage.setItem('token', token);
+      localStorage.setItem('klchb_token', token);
 
       // 解碼並設置角色
       const decoded = decodeToken(token);
@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
       this.token = null;
       this.name = null;
       this.role = null;
-      localStorage.removeItem('token');
+      localStorage.removeItem('klchb_token');
     },
     logout() {
       this.clearToken();
