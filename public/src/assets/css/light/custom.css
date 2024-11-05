@@ -1,0 +1,15 @@
+@charset "UTF-8";
+/*
+	===============================
+	by Poet Hsiao
+	===============================
+*/
+
+.modal-content {
+    background-color: white;
+    border: none;
+}
+
+.modal-header, .modal-footer {
+    background-color: white;
+}

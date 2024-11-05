@@ -1,91 +1,66 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <HeaderComponent v-if="!isLoginPage" />
+  <div class="main-container" id="container">
+    <Sidebar v-if="!isLoginPage" />
+    <router-view />
+  </div>
+  <Footer v-if="!isLoginPage" />
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+<script>
+import HeaderComponent from './components/layout/Header.vue';
+import Sidebar from './components/layout/Sidebar.vue';
+import { useRoute, useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+export default {
+  components: {
+    // eslint-disable-next-line vue/no-reserved-component-names
+    HeaderComponent,
+    Sidebar,
+    // eslint-disable-next-line vue/no-reserved-component-names
+  },
+  setup() {
+    const route = useRoute();
+    const isLoginPage = ref(route.path === '/login');
 
-nav {
+    watch(route, (newRoute) => {
+      isLoginPage.value = newRoute.path === '/login';
+    });
+
+    return {
+      isLoginPage,
+    };
+  }
+};
+</script>
+
+<style>
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* 保證 Loading 層在最上層 */
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.loading-spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
