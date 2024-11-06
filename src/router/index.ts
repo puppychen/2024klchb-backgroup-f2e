@@ -37,6 +37,12 @@ const router = createRouter({
       component: () => import('../views/facility/FacilityListView.vue')
     },
     {
+      path: '/FacilityEdit/:id',
+      name: 'FacilityEdit',
+      component: () => import('../views/facility/FacilityEditView.vue'),
+      props: true
+    },
+    {
       path: '/SysUserList',
       name: 'SysUserList',
       component: () => import('../views/system/SysUserListView.vue')

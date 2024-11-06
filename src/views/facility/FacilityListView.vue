@@ -34,31 +34,26 @@
               <table v-else id="emtriage-list" class="table dt-table-hover" style="width:100%">
                 <thead>
                   <tr>
-                    <th>機構代碼</th>
-                    <th>機構名稱</th>
-                    <th>機構類型</th>
-                    <th>電話</th>
-                    <th>地址</th>
-                    <th>更新日期</th>
-                    <th>功能</th>
+                    <th class="code-column">機構代碼</th>
+                    <th class="name-column">機構名稱</th>
+                    <th class="type-column">機構類型</th>
+                    <th class="phone-column">電話</th>
+                    <th class="address-column">地址</th>
+                    <th class="updated-column">更新日期</th>
+                    <th class="actions-column">功能</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in paginatedItems" :key="item.uuid">
-                    <td>{{ item.code }}</td>
-                    <td><span class="em-number">{{ item.name }}</span></td>
-                    <td><span class="em-ages">{{ item.type }}</span></td>
-                    <td><span class="em-sex">{{ item.phone }}</span></td>
-                    <td><span class="em-date1">{{ item.address }}</span></td>
-                    <td><span class="em-date2">{{ formatDate(item.updatedAt) }}</span></td>
-                    <td>
-                      <a class="badge badge-light-info text-start me-2 action-view" href="./sys-user-view.html">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                      </a>
-                      <a class="badge badge-light-primary text-start me-2 action-edit" href="./sys-user-edit.html">
+                  <tr v-for="item in paginatedItems" :key="item.id">
+                    <td class="code-column">{{ item.code }}</td>
+                    <td class="name-column">{{ item.name }}</td>
+                    <td class="type-column">{{ item.type }}</td>
+                    <td class="phone-column">{{ item.phone }}</td>
+                    <td class="address-column">{{ item.address }}</td>
+                    <td class="updated-column">{{ formatDate(item.updatedAt) }}</td>
+                    <td class="actions-column">
+                      <a class="badge badge-light-primary text-start me-2 action-edit"
+                         :href="`/FacilityEdit/${item.id}`">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3">
                           <path d="M12 20h9"></path>
                           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -85,12 +80,11 @@
 
 <script lang="ts">
 import FooterComponent from '@/components/layout/Footer.vue';
-import { ref, computed, onMounted } from 'vue';
 import apiClient from '@/utils/axios';
 import { format } from 'date-fns';
 
 interface FacilityItem {
-  uuid: string;
+  id: number;
   code: string;
   name: string;
   type: string;
@@ -166,6 +160,50 @@ export default {
 
 <style scoped>
 /* Add your styles here */
+.code-column {
+  width: 10%;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.name-column {
+  width: 15%;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.type-column {
+  width: 10%;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.phone-column {
+  width: 10%;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.address-column {
+  width: 20%;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.updated-column {
+  width: 15%;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.actions-column {
+  width: 10%;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
 .pagination-controls {
   display: flex;
   justify-content: center;
