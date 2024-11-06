@@ -162,8 +162,8 @@ export default defineComponent({
 
         // Initialize serviceTimes based on fetched data
         if (facility.value.serviceInfo && facility.value.serviceInfo.srv_Time) {
-          serviceTimes.value = facility.value.serviceInfo.srv_Time.map((period: any) =>
-            period.map((day: any) => day.yn === 'N')
+          serviceTimes.value = facility.value.serviceInfo.srv_Time.map((period: { yn: string }[]) =>
+            period.map((day: { yn: string }) => day.yn === 'N')
           );
         }
 
