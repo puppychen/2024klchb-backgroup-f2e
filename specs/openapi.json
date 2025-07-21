@@ -1,0 +1,1013 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "summary": "管理員登入",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "登入成功，回傳 JWT token"
+          },
+          "401": {
+            "description": "登入失敗"
+          }
+        },
+        "tags": [
+          "認證管理"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "summary": "註冊新管理員",
+        "description": "需要 admin 權限",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "成功註冊管理員"
+          },
+          "403": {
+            "description": "權限不足"
+          }
+        },
+        "tags": [
+          "認證管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/auth/profile": {
+      "post": {
+        "operationId": "AuthController_getProfile",
+        "summary": "取得當前登入用戶資料",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功取得用戶資料"
+          }
+        },
+        "tags": [
+          "認證管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "AuthController_getAdminProfile",
+        "summary": "取得管理員詳細資料",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功取得管理員資料"
+          }
+        },
+        "tags": [
+          "認證管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AuthController_updateProfile",
+        "summary": "更新管理員資料",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功更新資料"
+          },
+          "400": {
+            "description": "資料格式錯誤"
+          }
+        },
+        "tags": [
+          "認證管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/admin": {
+      "post": {
+        "operationId": "AdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      },
+      "get": {
+        "operationId": "AdminController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/admin/{uuid}": {
+      "get": {
+        "operationId": "AdminController_findOne",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "AdminController_update",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "AdminController_remove",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/consultation": {
+      "get": {
+        "operationId": "ConsultationController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/consultation/{uuid}": {
+      "get": {
+        "operationId": "ConsultationController_findOne",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/facility": {
+      "post": {
+        "operationId": "FacilityController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFacilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      },
+      "get": {
+        "operationId": "FacilityController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/facility/{id}": {
+      "get": {
+        "operationId": "FacilityController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "FacilityController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFacilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "FacilityController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "operationId": "UserController_findAll",
+        "summary": "取得所有用戶列表",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功取得用戶列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/user/{uuid}": {
+      "get": {
+        "operationId": "UserController_findOne",
+        "summary": "根據 UUID 取得單一用戶資料",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得用戶資料",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到用戶"
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/user/{uuid}/children": {
+      "get": {
+        "operationId": "UserController_getChildren",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "UserController_createChild",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChildDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/user/{uuid}/children/{childUuid}": {
+      "patch": {
+        "operationId": "UserController_updateChild",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "childUuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChildDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "UserController_removeChild",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "childUuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/user/{uuid}/notes": {
+      "get": {
+        "operationId": "UserController_getNotes",
+        "summary": "取得用戶的所有筆記",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得筆記列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NoteResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "UserController_createNote",
+        "summary": "為用戶建立新筆記",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功建立筆記",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/user/{uuid}/notes/{noteUuid}": {
+      "get": {
+        "operationId": "UserController_getNote",
+        "summary": "根據 UUID 取得單一筆記及編輯歷史",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteUuid",
+            "required": true,
+            "in": "path",
+            "description": "筆記 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得筆記資料",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到筆記"
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "UserController_updateNote",
+        "summary": "更新筆記內容",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteUuid",
+            "required": true,
+            "in": "path",
+            "description": "筆記 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功更新筆記",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到筆記"
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "UserController_removeNote",
+        "summary": "刪除筆記",
+        "parameters": [
+          {
+            "name": "uuid",
+            "required": true,
+            "in": "path",
+            "description": "用戶 UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteUuid",
+            "required": true,
+            "in": "path",
+            "description": "筆記 UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功刪除筆記",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到筆記"
+          }
+        },
+        "tags": [
+          "用戶管理"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "遠距諮詢管理後台 API",
+    "description": "遠距諮詢管理系統後端 API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "CreateAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateFacilityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateFacilityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ChildResponseDto": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "子女資料 UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "子女姓名"
+          },
+          "birthDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "出生日期"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "建立時間"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "更新時間"
+          }
+        },
+        "required": [
+          "uuid",
+          "name",
+          "birthDate",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "NoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "筆記 UUID"
+          },
+          "title": {
+            "type": "string",
+            "description": "筆記標題"
+          },
+          "content": {
+            "type": "string",
+            "description": "筆記內容"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "建立時間"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "更新時間"
+          },
+          "NoteEditHistory": {
+            "description": "筆記編輯歷史",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteEditHistoryResponseDto"
+            }
+          }
+        },
+        "required": [
+          "uuid",
+          "title",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "用戶 UUID"
+          },
+          "lineId": {
+            "type": "string",
+            "description": "LINE ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "用戶姓名",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "description": "用戶附加資料",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "建立時間"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "更新時間"
+          },
+          "Children": {
+            "description": "子女資料列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChildResponseDto"
+            }
+          },
+          "Note": {
+            "description": "筆記列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteResponseDto"
+            }
+          }
+        },
+        "required": [
+          "uuid",
+          "lineId",
+          "name",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateChildDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateChildDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "NoteEditHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "編輯歷史 UUID"
+          },
+          "beforeContent": {
+            "type": "string",
+            "description": "編輯前內容",
+            "nullable": true
+          },
+          "afterContent": {
+            "type": "string",
+            "description": "編輯後內容",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "建立時間"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "更新時間"
+          }
+        },
+        "required": [
+          "uuid",
+          "beforeContent",
+          "afterContent",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateNoteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateNoteDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

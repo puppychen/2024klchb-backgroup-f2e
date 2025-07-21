@@ -1532,7 +1532,7 @@ Quill.DEFAULTS = {
 };
 Quill.events = _emitter4.default.events;
 Quill.sources = _emitter4.default.sources;
-// eslint-disable-next-line no-undef
+ 
 Quill.version =  false ? 'dev' : "1.3.6";
 
 Quill.imports = {
@@ -1984,7 +1984,7 @@ function debug(method) {
       args[_key - 1] = arguments[_key];
     }
 
-    (_console = console)[method].apply(_console, args); // eslint-disable-line no-console
+    (_console = console)[method].apply(_console, args);  
   }
 }
 
@@ -6887,7 +6887,7 @@ var BaseTooltip = function (_Tooltip) {
         case 'video':
           {
             value = extractVideoUrl(value);
-          } // eslint-disable-next-line no-fallthrough
+          }  
         case 'formula':
           {
             if (!value) break;
@@ -6918,7 +6918,7 @@ function extractVideoUrl(url) {
     return (match[1] || 'https') + '://www.youtube.com/embed/' + match[2] + '?showinfo=0';
   }
   if (match = url.match(/^(?:(https?):\/\/)?(?:www\.)?vimeo\.com\/(\d+)/)) {
-    // eslint-disable-line no-cond-assign
+     
     return (match[1] || 'https') + '://player.vimeo.com/video/' + match[2] + '/';
   }
   return url;
@@ -9151,7 +9151,7 @@ function matchText(node, delta) {
     return delta;
   }
   if (!computeStyle(node.parentNode).whiteSpace.startsWith('pre')) {
-    // eslint-disable-next-line func-style
+     
     var replacer = function replacer(collapse, match) {
       match = match.replace(/[^\u00a0]/g, ''); // \u00a0 is nbsp;
       return match.length < 1 && collapse ? ' ' : match;

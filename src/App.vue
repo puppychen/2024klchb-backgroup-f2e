@@ -15,10 +15,10 @@ import { ref, watch } from 'vue'
 
 export default {
   components: {
-    // eslint-disable-next-line vue/no-reserved-component-names
+     
     HeaderComponent,
     Sidebar,
-    // eslint-disable-next-line vue/no-reserved-component-names
+     
   },
   setup() {
     const route = useRoute();
