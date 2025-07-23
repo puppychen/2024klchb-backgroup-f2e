@@ -68,7 +68,7 @@
                           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                       </a>
-                      <a class="badge badge-light-warning text-start me-2 action-notes" @click="openNotesModal(user)" title="筆記管理">
+                      <a class="badge badge-light-warning text-start me-2 action-notes" @click="openNotesModal(user)" title="記事本管理">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text">
                           <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
                           <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -123,7 +123,7 @@
         <h2>小朋友資訊</h2>
         <div v-if="selectedUser">
           <h6 class="mb-3">{{ selectedUser.content?.name || selectedUser.name || '未設定姓名' }} 的小朋友資訊</h6>
-          
+
           <div v-if="childrenLoading" class="loading-indicator">
             載入中...
           </div>
@@ -161,20 +161,20 @@
       <div class="modal-content modal-notes">
         <span class="close" @click="closeNotesModal">&times;</span>
         <div class="notes-header">
-          <h2>{{ selectedUser.content?.name || selectedUser.name || '未設定姓名' }} 的筆記</h2>
+          <h2>{{ selectedUser?.content?.name || selectedUser?.name || '未設定姓名' }} 的記事本</h2>
         </div>
-        
+
         <div class="notes-add-section">
-          <button class="btn btn-primary btn-sm" @click="openAddNoteModal">新增筆記</button>
+          <button class="btn btn-primary btn-sm" @click="openAddNoteModal">新增記事本</button>
         </div>
-        
+
         <div class="notes-container">
           <div v-if="notesLoading" class="loading-indicator">
             載入中...
           </div>
 
           <div v-else-if="notes.length > 0" class="notes-list">
-            <div v-for="(note, index) in notes" :key="note.uuid" class="note-item">
+            <div v-for="note in notes" :key="note.uuid" class="note-item">
               <!-- Display Mode -->
               <div v-if="editingNoteId !== note.uuid" class="note-display">
                 <div class="note-content">
@@ -211,8 +211,8 @@
 
               <!-- Edit Mode -->
               <div v-else class="note-edit">
-                <textarea 
-                  v-model="editNoteContent" 
+                <textarea
+                  v-model="editNoteContent"
                   class="note-textarea"
                   rows="4"
                   @keydown.escape="cancelEditNote"
@@ -230,7 +230,7 @@
           </div>
 
           <div v-else class="empty-notes">
-            <p>暫無筆記資料</p>
+            <p>暫無記事本資料</p>
           </div>
         </div>
       </div>
@@ -240,15 +240,11 @@
     <div v-if="showNoteEditModal" class="modal" @click.self="closeNoteEditModal">
       <div class="modal-content">
         <span class="close" @click="closeNoteEditModal">&times;</span>
-        <h2>{{ editingNote ? '編輯筆記' : '新增筆記' }}</h2>
+        <h2>{{ editingNote ? '編輯記事本' : '新增記事本' }}</h2>
         <form @submit.prevent="saveNote">
           <div class="mb-3">
-            <label class="form-label">標題</label>
-            <input type="text" class="form-control" v-model="noteForm.title" required>
-          </div>
-          <div class="mb-3">
             <label class="form-label">內容</label>
-            <textarea class="form-control" v-model="noteForm.content" rows="5" required></textarea>
+            <textarea class="form-control" v-model="noteForm.content" rows="8" required></textarea>
           </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-secondary me-2" @click="closeNoteEditModal">取消</button>
@@ -270,12 +266,11 @@
             </svg>
             返回
           </button>
-          <h2>筆記編輯歷史</h2>
+          <h2>記事本編輯歷史</h2>
         </div>
-        
+
         <div v-if="selectedNote" class="history-container">
           <div class="current-note-info mb-4">
-            <h5>{{ selectedNote.title }}</h5>
             <div class="note-meta">
               <span class="text-muted">建立時間：{{ formatDate(selectedNote.createdAt) }}</span>
               <span class="text-muted ms-3">最後更新：{{ formatDate(selectedNote.updatedAt) }}</span>
@@ -285,7 +280,7 @@
           <div v-if="selectedNote.NoteEditHistory && selectedNote.NoteEditHistory.length > 0" class="history-list">
             <h6 class="mb-3">編輯記錄 ({{ selectedNote.NoteEditHistory.length }} 筆)</h6>
             <div class="history-timeline">
-              <div v-for="(history, index) in selectedNote.NoteEditHistory" :key="history.uuid" class="history-item">
+              <div v-for="history in selectedNote.NoteEditHistory" :key="history.uuid" class="history-item">
                 <div class="history-date">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock me-1">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -293,7 +288,7 @@
                   </svg>
                   {{ formatDate(history.createdAt) }}
                 </div>
-                
+
                 <div class="history-changes">
                   <div class="change-section">
                     <div class="change-label">
@@ -332,7 +327,7 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12,6 12,12 16,14"></polyline>
               </svg>
-              <p class="mb-0">此筆記暫無編輯歷史記錄</p>
+              <p class="mb-0">此記事本暫無編輯歷史記錄</p>
             </div>
           </div>
         </div>
@@ -345,47 +340,8 @@
 import FooterComponent from '@/components/layout/Footer.vue'
 import { format } from 'date-fns'
 import Swal from 'sweetalert2'
-
-interface UserContent {
-  name?: string
-  phone?: string
-  address?: string
-  email?: string
-}
-
-interface User {
-  uuid: string
-  lineId: string
-  name: string | null
-  content: UserContent | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface Child {
-  uuid: string
-  name: string
-  birthDate: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface NoteEditHistory {
-  uuid: string
-  beforeContent: string | null
-  afterContent: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-interface Note {
-  uuid: string
-  title: string
-  content: string
-  createdAt: string
-  updatedAt: string
-  NoteEditHistory?: NoteEditHistory[]
-}
+import { UserService } from '@/services'
+import type { User, Child, Note, CreateNoteDto, UpdateNoteDto } from '@/services/types'
 
 export default {
   name: 'UserListView',
@@ -413,9 +369,8 @@ export default {
       editNoteContent: '',
       searchQuery: '',
       currentPage: 1,
-      itemsPerPage: 10,
+      itemsPerPage: 50,
       noteForm: {
-        title: '',
         content: ''
       }
     }
@@ -444,115 +399,29 @@ export default {
     }
   },
   methods: {
-
-    // Mock data for development - replace with API calls later
-    getMockUsers() {
-      return [
-        {
-          uuid: '1',
-          lineId: 'user001',
-          name: '張小明',
-          content: { 
-            name: '張大明', 
-            phone: '0912345678', 
-            address: '台北市信義區忠孝東路123號',
-            email: 'user001@example.com' 
-          },
-          createdAt: '2024-01-15T08:30:00Z',
-          updatedAt: '2024-01-20T10:15:00Z'
-        },
-        {
-          uuid: '2',
-          lineId: 'user002',
-          name: '李小華',
-          content: { 
-            name: '李大華',
-            phone: '0987654321',
-            address: '新北市板橋區中正路456號'
-          },
-          createdAt: '2024-01-16T09:00:00Z',
-          updatedAt: '2024-01-22T14:30:00Z'
-        },
-        {
-          uuid: '3',
-          lineId: 'user003',
-          name: null,
-          content: null,
-          createdAt: '2024-01-17T10:00:00Z',
-          updatedAt: '2024-01-17T10:00:00Z'
-        }
-      ]
-    },
-    getMockChildren() {
-      return [
-        {
-          uuid: 'child1',
-          name: '張小寶',
-          birthDate: '2020-05-15T00:00:00Z',
-          createdAt: '2024-01-15T08:30:00Z',
-          updatedAt: '2024-01-15T08:30:00Z'
-        },
-        {
-          uuid: 'child2',
-          name: '張小貝',
-          birthDate: '2018-03-22T00:00:00Z',
-          createdAt: '2024-01-15T08:30:00Z',
-          updatedAt: '2024-01-15T08:30:00Z'
-        }
-      ]
-    },
-    getMockNotes() {
-      return [
-        {
-          uuid: 'note1',
-          title: '第一次諮詢記錄',
-          content: '小朋友有些許發燒症狀，建議多休息並觀察體溫變化。建議每4小時量一次體溫，若持續高燒超過38.5度請就醫。',
-          createdAt: '2024-01-16T09:00:00Z',
-          updatedAt: '2024-01-16T15:30:00Z',
-          NoteEditHistory: [
-            {
-              uuid: 'history1',
-              beforeContent: '小朋友有發燒症狀',
-              afterContent: '小朋友有些許發燒症狀，建議多休息並觀察體溫變化。建議每4小時量一次體溫，若持續高燒超過38.5度請就醫。',
-              createdAt: '2024-01-16T15:30:00Z',
-              updatedAt: '2024-01-16T15:30:00Z'
-            }
-          ]
-        },
-        {
-          uuid: 'note2',
-          title: '追蹤記錄',
-          content: '體溫已恢復正常，精神狀況良好。家長表示孩子食欲正常，沒有其他症狀。',
-          createdAt: '2024-01-18T10:30:00Z',
-          updatedAt: '2024-01-18T10:30:00Z',
-          NoteEditHistory: []
-        }
-      ]
-    },
-
     async fetchUsers() {
       this.loading = true
       try {
-        // TODO: Replace with actual API call
-        // const response = await apiClient.get('/user')
-        // this.users = response.data
-        
-        // Mock delay for development
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        this.users = this.getMockUsers()
+        this.users = await UserService.getUserList()
       } catch (error) {
         console.error('Failed to fetch users:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入用戶列表，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
       } finally {
         this.loading = false
       }
     },
-    
+
     prevPage() {
       if (this.currentPage > 1) {
         this.currentPage--
       }
     },
-    
+
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++
@@ -576,15 +445,15 @@ export default {
       this.showChildrenModal = true
 
       try {
-        // TODO: Replace with actual API call
-        // const response = await apiClient.get(`/user/${user.uuid}/children`)
-        // this.children = response.data
-        
-        // Mock delay for development
-        await new Promise(resolve => setTimeout(resolve, 800))
-        this.children = user.uuid === '1' ? this.getMockChildren() : []
+        this.children = await UserService.getUserChildren(user.uuid)
       } catch (error) {
         console.error('Failed to fetch children:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入小朋友資料，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
       } finally {
         this.childrenLoading = false
       }
@@ -603,15 +472,15 @@ export default {
       this.showNotesModal = true
 
       try {
-        // TODO: Replace with actual API call
-        // const response = await apiClient.get(`/user/${user.uuid}/notes`)
-        // this.notes = response.data
-        
-        // Mock delay for development
-        await new Promise(resolve => setTimeout(resolve, 800))
-        this.notes = user.uuid === '1' ? this.getMockNotes() : []
+        this.notes = await UserService.getUserNotes(user.uuid)
       } catch (error) {
         console.error('Failed to fetch notes:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入記事本資料，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
       } finally {
         this.notesLoading = false
       }
@@ -626,26 +495,16 @@ export default {
     openAddNoteModal() {
       this.editingNote = null
       this.noteForm = {
-        title: '',
         content: ''
       }
       this.showNoteEditModal = true
     },
 
-    editNote(note: Note) {
-      this.editingNote = note
-      this.noteForm = {
-        title: note.title,
-        content: note.content
-      }
-      this.showNoteEditModal = true
-    },
 
     closeNoteEditModal() {
       this.showNoteEditModal = false
       this.editingNote = null
       this.noteForm = {
-        title: '',
         content: ''
       }
     },
@@ -653,49 +512,39 @@ export default {
     async saveNote() {
       try {
         if (this.editingNote) {
-          // TODO: Replace with actual API call
-          // await apiClient.patch(`/user/${this.selectedUser.uuid}/notes/${this.editingNote.uuid}`, this.noteForm)
-          
-          // Mock update
+          const updatedNote = await UserService.updateNote(
+            this.selectedUser!.uuid,
+            this.editingNote.uuid,
+            { content: this.noteForm.content } as UpdateNoteDto
+          )
+
           const index = this.notes.findIndex(n => n.uuid === this.editingNote!.uuid)
           if (index !== -1) {
-            this.notes[index] = {
-              ...this.notes[index],
-              title: this.noteForm.title,
-              content: this.noteForm.content,
-              updatedAt: new Date().toISOString()
-            }
+            this.notes[index] = updatedNote
           }
-          
+
           await Swal.fire({
             title: '成功！',
-            text: '筆記已更新',
+            text: '記事本已更新',
             icon: 'success',
             confirmButtonText: '確定'
           })
         } else {
-          // TODO: Replace with actual API call
-          // await apiClient.post(`/user/${this.selectedUser.uuid}/notes`, this.noteForm)
-          
-          // Mock add
-          const newNote: Note = {
-            uuid: `note-${Date.now()}`,
-            title: this.noteForm.title,
-            content: this.noteForm.content,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            NoteEditHistory: []
-          }
+          const newNote = await UserService.createNote(
+            this.selectedUser!.uuid,
+            { content: this.noteForm.content } as CreateNoteDto
+          )
+
           this.notes.unshift(newNote)
-          
+
           await Swal.fire({
             title: '成功！',
-            text: '筆記已新增',
+            text: '記事本已新增',
             icon: 'success',
             confirmButtonText: '確定'
           })
         }
-        
+
         this.closeNoteEditModal()
       } catch (error) {
         console.error('Failed to save note:', error)
@@ -711,7 +560,7 @@ export default {
     async deleteNote(note: Note) {
       const result = await Swal.fire({
         title: '確認刪除？',
-        text: `確定要刪除筆記「${note.title}」嗎？此操作無法復原。`,
+        text: `確定要刪除這筆記事本嗎？此操作無法復原。`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: '確定刪除',
@@ -721,18 +570,16 @@ export default {
 
       if (result.isConfirmed) {
         try {
-          // TODO: Replace with actual API call
-          // await apiClient.delete(`/user/${this.selectedUser.uuid}/notes/${note.uuid}`)
-          
-          // Mock delete
+          await UserService.deleteNote(this.selectedUser!.uuid, note.uuid)
+
           const index = this.notes.findIndex(n => n.uuid === note.uuid)
           if (index !== -1) {
             this.notes.splice(index, 1)
           }
-          
+
           await Swal.fire({
             title: '已刪除！',
-            text: '筆記已成功刪除',
+            text: '記事本已成功刪除',
             icon: 'success',
             confirmButtonText: '確定'
           })
@@ -748,20 +595,6 @@ export default {
       }
     },
 
-    viewNoteDetail(note: Note) {
-      this.selectedNote = note
-      this.showNoteDetailModal = true
-    },
-
-    closeNoteDetailModal() {
-      this.showNoteDetailModal = false
-      this.selectedNote = null
-    },
-
-    truncateContent(content: string, maxLength: number = 50) {
-      if (!content) return ''
-      return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
-    },
 
     formatDate(dateString: string) {
       if (!dateString) return ''
@@ -769,17 +602,7 @@ export default {
     },
 
     calculateAge(birthDate: string) {
-      if (!birthDate) return 0
-      const today = new Date()
-      const birth = new Date(birthDate)
-      let age = today.getFullYear() - birth.getFullYear()
-      const monthDiff = today.getMonth() - birth.getMonth()
-      
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-        age--
-      }
-      
-      return age
+      return UserService.calculateAge(birthDate)
     },
 
     // Inline editing methods
@@ -790,25 +613,23 @@ export default {
 
     async saveEditNote(note: Note) {
       try {
-        // TODO: Replace with actual API call
-        // await apiClient.patch(`/user/${this.selectedUser.uuid}/notes/${note.uuid}`, { content: this.editNoteContent })
-        
-        // Mock update
+        const updatedNote = await UserService.updateNoteContent(
+          this.selectedUser!.uuid,
+          note.uuid,
+          this.editNoteContent
+        )
+
         const index = this.notes.findIndex(n => n.uuid === note.uuid)
         if (index !== -1) {
-          this.notes[index] = {
-            ...this.notes[index],
-            content: this.editNoteContent,
-            updatedAt: new Date().toISOString()
-          }
+          this.notes[index] = updatedNote
         }
-        
+
         this.editingNoteId = null
         this.editNoteContent = ''
-        
+
         await Swal.fire({
           title: '成功！',
-          text: '筆記已更新',
+          text: '記事本已更新',
           icon: 'success',
           confirmButtonText: '確定',
           timer: 1500,
@@ -831,9 +652,20 @@ export default {
     },
 
     // Note history methods
-    viewNoteHistory(note: Note) {
-      this.selectedNote = note
-      this.showNoteHistoryModal = true
+    async viewNoteHistory(note: Note) {
+      try {
+        // Get the note with full edit history
+        this.selectedNote = await UserService.getNoteDetail(this.selectedUser!.uuid, note.uuid)
+        this.showNoteHistoryModal = true
+      } catch (error) {
+        console.error('Failed to fetch note history:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入編輯歷史，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
+      }
     },
 
     closeNoteHistoryModal() {
@@ -847,7 +679,7 @@ export default {
       // this.selectedNote = null - we keep the selected note in case user wants to see history again
     }
   },
-  
+
   mounted() {
     this.fetchUsers()
   }
@@ -934,10 +766,6 @@ export default {
   position: relative;
 }
 
-.modal-large {
-  width: 90%;
-  max-width: 900px;
-}
 
 .close {
   position: absolute;
@@ -1225,7 +1053,7 @@ pre {
 }
 
 .history-date {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   font-size: 0.9rem;
   color: #495057;
@@ -1235,7 +1063,6 @@ pre {
   padding: 8px 12px;
   border-radius: 20px;
   border: 1px solid #dee2e6;
-  display: inline-flex;
 }
 
 .history-changes {
