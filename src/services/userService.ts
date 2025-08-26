@@ -42,6 +42,13 @@ export class UserService {
   }
 
   /**
+   * 根據UUID取得用戶 (別名方法，用於與 getUserDetail 保持一致性)
+   */
+  static async getUserByUuid(uuid: string): Promise<User> {
+    return await UserApi.getUserById(uuid)
+  }
+
+  /**
    * 取得用戶的小朋友列表
    */
   static async getUserChildren(userUuid: string): Promise<Child[]> {
