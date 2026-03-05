@@ -20,7 +20,9 @@ export interface User {
   uuid: string
   lineId: string
   name: string | null
+  pictureUrl: string | null
   content: UserContent | null
+  sourceKeyword: string | null
   createdAt: string
   updatedAt: string
   Children?: Child[]
@@ -132,6 +134,17 @@ export interface UpdateFacilityDto {
   name?: string
   address?: string
   phone?: string
+}
+
+// Source User Types
+export interface SourceUser {
+  uuid: string
+  lineId: string
+  userName: string | null
+  sourceKeyword: string
+  sourceName: string
+  sourceKeywordAt: string | null
+  createdAt: string
 }
 
 // Consultation Types

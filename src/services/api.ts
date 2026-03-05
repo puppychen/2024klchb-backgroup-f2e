@@ -15,7 +15,8 @@ import type {
   Facility,
   CreateFacilityDto,
   UpdateFacilityDto,
-  Consultation
+  Consultation,
+  SourceUser
 } from './types'
 
 /**
@@ -152,6 +153,14 @@ export class UserApi {
    */
   static async deleteNote(userUuid: string, noteUuid: string): Promise<NoteResponseDto> {
     const response = await apiClient.delete(`/user/${userUuid}/notes/${noteUuid}`)
+    return response.data
+  }
+
+  /**
+   * 取得有來源關聯的使用者列表
+   */
+  static async getSourceUsers(): Promise<SourceUser[]> {
+    const response = await apiClient.get('/user/source-users')
     return response.data
   }
 }

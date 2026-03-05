@@ -34,25 +34,44 @@
               <table v-else id="user-list" class="table dt-table-hover" style="width:100%">
                 <thead>
                   <tr>
-                    <th class="line-id-column">Line ID</th>
-                    <th class="line-name-column">Line名稱</th>
-                    <th class="name-column">姓名</th>
+                    <th class="user-column">使用者</th>
                     <th class="phone-column">電話</th>
-                    <th class="address-column">地址</th>
+                    <th class="source-column">來源</th>
+                    <th class="info-column">資訊</th>
+                    <th class="date-column">加入時間</th>
                     <th class="actions-column">功能</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="user in paginatedItems" :key="user.uuid">
-                    <td class="line-id-column">{{ user.lineId }}</td>
-                    <td class="line-name-column">
-                      <a href="#" @click.prevent="openUserDetail(user)" class="text-primary text-decoration-none">
-                        {{ user.name || '未設定' }}
-                      </a>
+                    <td class="user-column">
+                      <div class="user-cell">
+                        <img
+                          :src="user.pictureUrl || defaultAvatar"
+                          class="user-avatar"
+                          @error="onAvatarError($event)"
+                          alt="avatar"
+                        />
+                        <div class="user-info">
+                          <a href="#" @click.prevent="openUserDetail(user)" class="user-line-name">
+                            {{ user.name || '未設定' }}
+                          </a>
+                          <span v-if="user.content?.name" class="user-real-name">{{ user.content.name }}</span>
+                        </div>
+                      </div>
                     </td>
-                    <td class="name-column">{{ user.content?.name || '未設定' }}</td>
-                    <td class="phone-column">{{ user.content?.phone || '未設定' }}</td>
-                    <td class="address-column">{{ user.content?.address || '未設定' }}</td>
+                    <td class="phone-column">{{ user.content?.phone || '-' }}</td>
+                    <td class="source-column">
+                      <span v-if="user.sourceKeyword" class="badge badge-light-primary">{{ user.sourceKeyword }}</span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
+                    <td class="info-column">
+                      <span v-if="user.content?.name" class="badge badge-light-success me-1">已填資料</span>
+                      <span v-if="user.Children && user.Children.length > 0" class="badge badge-light-info me-1">{{ user.Children.length }} 位孩子</span>
+                      <span v-if="user.Note && user.Note.length > 0" class="badge badge-light-warning me-1">{{ user.Note.length }} 筆記事</span>
+                      <span v-if="!user.content?.name && (!user.Children || user.Children.length === 0) && (!user.Note || user.Note.length === 0)" class="text-muted">-</span>
+                    </td>
+                    <td class="date-column">{{ formatShortDate(user.createdAt) }}</td>
                     <td class="actions-column">
                       <a class="badge badge-light-info text-start me-2 action-view" @click="openUserDetail(user)" title="查看詳細資料">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
@@ -100,12 +119,26 @@
         <span class="close" @click="closeUserDetailModal">&times;</span>
         <h2>用戶詳細資料</h2>
         <div v-if="selectedUser">
+          <div class="detail-avatar-section">
+            <img
+              :src="selectedUser.pictureUrl || defaultAvatar"
+              class="detail-avatar"
+              @error="onAvatarError($event)"
+              alt="avatar"
+            />
+            <div>
+              <h5 class="mb-1">{{ selectedUser.name || '未設定' }}</h5>
+              <span v-if="selectedUser.content?.name" class="text-muted">{{ selectedUser.content.name }}</span>
+            </div>
+          </div>
+          <hr />
           <p><strong>用戶 UUID:</strong> {{ selectedUser.uuid }}</p>
           <p><strong>LINE ID:</strong> {{ selectedUser.lineId }}</p>
           <p><strong>Line名稱:</strong> {{ selectedUser.name || '未設定' }}</p>
           <p><strong>姓名:</strong> {{ selectedUser.content?.name || '未設定' }}</p>
           <p><strong>電話:</strong> {{ selectedUser.content?.phone || '未設定' }}</p>
           <p><strong>地址:</strong> {{ selectedUser.content?.address || '未設定' }}</p>
+          <p><strong>來源:</strong> {{ selectedUser.sourceKeyword || '未設定' }}</p>
           <p><strong>建立時間:</strong> {{ formatDate(selectedUser.createdAt) }}</p>
           <p><strong>更新時間:</strong> {{ formatDate(selectedUser.updatedAt) }}</p>
           <div v-if="selectedUser.content" class="mt-4">
@@ -370,6 +403,7 @@ export default {
       searchQuery: '',
       currentPage: 1,
       itemsPerPage: 50,
+      defaultAvatar: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjY2NjIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAzYzEuNjYgMCAzIDEuMzQgMyAzcy0xLjM0IDMtMyAzLTMtMS4zNC0zLTMgMS4zNC0zIDMtM3ptMCAxNC4yYy0yLjUgMC00LjcxLTEuMjgtNi0zLjIyLjAzLTEuOTkgNC0zLjA4IDYtMy4wOCAxLjk5IDAgNS45NyAxLjA5IDYgMy4wOC0xLjI5IDEuOTQtMy41IDMuMjItNiAzLjIyeiIvPjwvc3ZnPg==',
       noteForm: {
         content: ''
       }
@@ -394,7 +428,8 @@ export default {
         (user.name && user.name.toLowerCase().includes(query)) ||
         (user.content?.name && user.content.name.toLowerCase().includes(query)) ||
         (user.content?.phone && user.content.phone.toLowerCase().includes(query)) ||
-        (user.content?.address && user.content.address.toLowerCase().includes(query))
+        (user.content?.address && user.content.address.toLowerCase().includes(query)) ||
+        (user.sourceKeyword && user.sourceKeyword.toLowerCase().includes(query))
       )
     }
   },
@@ -601,6 +636,16 @@ export default {
       return format(new Date(dateString), 'yyyy/MM/dd HH:mm')
     },
 
+    formatShortDate(dateString: string) {
+      if (!dateString) return ''
+      return format(new Date(dateString), 'yyyy/MM/dd')
+    },
+
+    onAvatarError(event: Event) {
+      const img = event.target as HTMLImageElement
+      img.src = this.defaultAvatar
+    },
+
     calculateAge(birthDate: string) {
       return UserService.calculateAge(birthDate)
     },
@@ -687,23 +732,9 @@ export default {
 </script>
 
 <style scoped>
-.line-id-column {
-  width: 10%;
-  word-wrap: break-word;
-  word-break: break-all;
-}
-
-.line-name-column {
-  width: 15%;
-  word-wrap: break-word;
-  word-break: break-all;
+.user-column {
+  width: 25%;
   white-space: normal;
-}
-
-.name-column {
-  width: 15%;
-  word-wrap: break-word;
-  word-break: break-all;
 }
 
 .phone-column {
@@ -712,17 +743,78 @@ export default {
   word-break: break-all;
 }
 
-.address-column {
-  width: 25%;
-  word-wrap: break-word;
-  word-break: break-all;
-  white-space: normal;
+.source-column {
+  width: 13%;
+}
+
+.info-column {
+  width: 18%;
+}
+
+.date-column {
+  width: 12%;
 }
 
 .actions-column {
-  width: 18%;
-  word-wrap: break-word;
-  word-break: break-all;
+  width: 15%;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #f0f0f0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-line-name {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-line-name:hover {
+  text-decoration: underline;
+}
+
+.user-real-name {
+  font-size: 0.8rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.detail-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #f0f0f0;
 }
 
 .pagination-controls {

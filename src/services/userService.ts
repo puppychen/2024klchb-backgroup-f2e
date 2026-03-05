@@ -144,13 +144,17 @@ export class UserService {
     phone: string
     address: string
     email: string
+    pictureUrl: string | null
+    sourceKeyword: string | null
   } {
     return {
       displayName: user.name || '未設定',
       fullName: user.content?.name || '未設定',
       phone: user.content?.phone || '未設定',
       address: user.content?.address || '未設定',
-      email: user.content?.email || '未設定'
+      email: user.content?.email || '未設定',
+      pictureUrl: user.pictureUrl || null,
+      sourceKeyword: user.sourceKeyword || null
     }
   }
 }
