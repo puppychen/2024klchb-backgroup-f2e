@@ -140,7 +140,7 @@ export interface UpdateFacilityDto {
 export interface SourceUser {
   uuid: string
   lineId: string
-  userName: string | null
+  lineName: string | null
   sourceKeyword: string
   sourceName: string
   sourceKeywordAt: string | null

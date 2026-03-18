@@ -35,7 +35,7 @@
                 <thead>
                   <tr>
                     <th class="user-column">使用者</th>
-                    <th class="phone-column">電話</th>
+                    <th class="address-column">地址</th>
                     <th class="source-column">來源</th>
                     <th class="info-column">資訊</th>
                     <th class="date-column">加入時間</th>
@@ -60,9 +60,13 @@
                         </div>
                       </div>
                     </td>
-                    <td class="phone-column">{{ user.content?.phone || '-' }}</td>
+                    <td class="address-column">
+                      <span v-if="user.content?.address" :title="user.content.address">{{ user.content.address.substring(0, 5) }}</span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
                     <td class="source-column">
-                      <span v-if="user.sourceKeyword" class="badge badge-light-primary">{{ user.sourceKeyword }}</span>
+                      <span v-if="user.sourceName" class="badge badge-light-primary">{{ user.sourceName }}</span>
+                      <span v-else-if="user.sourceKeyword" class="badge badge-light-secondary">{{ user.sourceKeyword }}</span>
                       <span v-else class="text-muted">-</span>
                     </td>
                     <td class="info-column">
@@ -79,21 +83,54 @@
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       </a>
-                      <a class="badge badge-light-success text-start me-2 action-children" @click="openChildrenModal(user)" title="小朋友資訊">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users">
+                      <a v-if="user.Children && user.Children.length > 0"
+                         class="badge badge-success text-start me-2 action-children position-relative"
+                         @click="openChildrenModal(user)"
+                         :title="`${user.Children.length} 位小朋友`"
+                         style="color: #fff;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 10px;">
+                          {{ user.Children.length }}
+                        </span>
+                      </a>
+                      <a v-else
+                         class="badge badge-light-secondary text-start me-2 action-children"
+                         @click="openChildrenModal(user)"
+                         title="尚無小朋友資料"
+                         style="opacity: 0.4;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                           <circle cx="9" cy="7" r="4"></circle>
                           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                       </a>
-                      <a class="badge badge-light-warning text-start me-2 action-notes" @click="openNotesModal(user)" title="記事本管理">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text">
+                      <a v-if="user.Note && user.Note.length > 0"
+                         class="badge badge-warning text-start me-2 action-notes position-relative"
+                         @click="openNotesModal(user)"
+                         :title="`${user.Note.length} 筆記事`"
+                         style="color: #fff;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
                           <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path>
-                          <line x1="9" y1="9" x2="10" y2="9"></line>
-                          <line x1="9" y1="13" x2="15" y2="13"></line>
-                          <line x1="9" y1="17" x2="15" y2="17"></line>
+                        </svg>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 10px;">
+                          {{ user.Note.length }}
+                        </span>
+                      </a>
+                      <a v-else
+                         class="badge badge-light-secondary text-start me-2 action-notes"
+                         @click="openNotesModal(user)"
+                         title="尚無記事"
+                         style="opacity: 0.4;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                          <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path>
                         </svg>
                       </a>
                     </td>

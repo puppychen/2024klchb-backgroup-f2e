@@ -34,8 +34,7 @@
               <table v-else id="source-user-list" class="table dt-table-hover" style="width:100%">
                 <thead>
                   <tr>
-                    <th>使用者名稱</th>
-                    <th>LINE ID</th>
+                    <th>LINE 名稱</th>
                     <th>來源名稱</th>
                     <th>關聯時間</th>
                     <th>加入時間</th>
@@ -43,8 +42,16 @@
                 </thead>
                 <tbody>
                   <tr v-for="user in paginatedItems" :key="user.uuid">
-                    <td>{{ user.userName || '未設定' }}</td>
-                    <td>{{ user.lineId }}</td>
+                    <td>
+                      {{ user.lineName || '未設定' }}
+                      <span class="line-id-icon" :title="user.lineId" @click="copyLineId(user.lineId)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="16" x2="12" y2="12"></line>
+                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                      </span>
+                    </td>
                     <td>{{ user.sourceName }}</td>
                     <td>{{ formatDate(user.sourceKeywordAt) }}</td>
                     <td>{{ formatDate(user.createdAt) }}</td>
@@ -97,7 +104,7 @@ export default {
       }
       const query = this.searchQuery.toLowerCase()
       return this.sourceUsers.filter((user: SourceUser) =>
-        (user.userName && user.userName.toLowerCase().includes(query)) ||
+        (user.lineName && user.lineName.toLowerCase().includes(query)) ||
         user.lineId.toLowerCase().includes(query) ||
         user.sourceName.toLowerCase().includes(query)
       )
@@ -126,6 +133,19 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    copyLineId(lineId: string) {
+      navigator.clipboard.writeText(lineId).then(() => {
+        // 可選：加個短暫提示
+      }).catch(() => {
+        // fallback
+        const el = document.createElement('textarea');
+        el.value = lineId;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      })
     },
     formatDate(dateString: string | null) {
       if (!dateString) return '-'
@@ -164,5 +184,16 @@ export default {
   text-align: center;
   font-size: 1.5em;
   margin: 20px 0;
+}
+
+.line-id-icon {
+  cursor: pointer;
+  margin-left: 4px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.line-id-icon:hover svg {
+  stroke: #4361ee;
 }
 </style>
