@@ -34,7 +34,8 @@
               <table v-else id="user-list" class="table dt-table-hover" style="width:100%">
                 <thead>
                   <tr>
-                    <th class="user-column">使用者</th>
+                    <th class="line-name-column">Line 名稱</th>
+                    <th class="set-name-column">設定名稱</th>
                     <th class="address-column">地址</th>
                     <th class="source-column">來源</th>
                     <th class="info-column">資訊</th>
@@ -44,7 +45,7 @@
                 </thead>
                 <tbody>
                   <tr v-for="user in paginatedItems" :key="user.uuid">
-                    <td class="user-column">
+                    <td class="line-name-column">
                       <div class="user-cell">
                         <img
                           :src="user.pictureUrl || defaultAvatar"
@@ -52,13 +53,14 @@
                           @error="onAvatarError($event)"
                           alt="avatar"
                         />
-                        <div class="user-info">
-                          <a href="#" @click.prevent="openUserDetail(user)" class="user-line-name">
-                            {{ user.name || '未設定' }}
-                          </a>
-                          <span v-if="user.content?.name" class="user-real-name">{{ user.content.name }}</span>
-                        </div>
+                        <a href="#" @click.prevent="openUserDetail(user)" class="user-line-name">
+                          {{ user.name || '未設定' }}
+                        </a>
                       </div>
+                    </td>
+                    <td class="set-name-column">
+                      <span v-if="user.content?.name">{{ user.content.name }}</span>
+                      <span v-else class="text-muted">-</span>
                     </td>
                     <td class="address-column">
                       <span v-if="user.content?.address" :title="user.content.address">{{ user.content.address.substring(0, 5) }}</span>
@@ -71,9 +73,9 @@
                     </td>
                     <td class="info-column">
                       <span v-if="user.content?.name" class="badge badge-light-success me-1">已填資料</span>
-                      <span v-if="user.Children && user.Children.length > 0" class="badge badge-light-info me-1">{{ user.Children.length }} 位孩子</span>
+                      <span v-if="user.content?.childes && user.content.childes.length > 0" class="badge badge-light-info me-1">{{ user.content.childes.length }} 位孩子</span>
                       <span v-if="user.Note && user.Note.length > 0" class="badge badge-light-warning me-1">{{ user.Note.length }} 筆記事</span>
-                      <span v-if="!user.content?.name && (!user.Children || user.Children.length === 0) && (!user.Note || user.Note.length === 0)" class="text-muted">-</span>
+                      <span v-if="!user.content?.name && (!user.content?.childes || user.content.childes.length === 0) && (!user.Note || user.Note.length === 0)" class="text-muted">-</span>
                     </td>
                     <td class="date-column">{{ formatShortDate(user.createdAt) }}</td>
                     <td class="actions-column">
@@ -83,10 +85,10 @@
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       </a>
-                      <a v-if="user.Children && user.Children.length > 0"
+                      <a v-if="user.content?.childes && user.content.childes.length > 0"
                          class="badge badge-success text-start me-2 action-children position-relative"
                          @click="openChildrenModal(user)"
-                         :title="`${user.Children.length} 位小朋友`"
+                         :title="`${user.content.childes.length} 位小朋友`"
                          style="color: #fff;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -95,7 +97,7 @@
                           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 10px;">
-                          {{ user.Children.length }}
+                          {{ user.content.childes.length }}
                         </span>
                       </a>
                       <a v-else
@@ -194,26 +196,24 @@
         <div v-if="selectedUser">
           <h6 class="mb-3">{{ selectedUser.content?.name || selectedUser.name || '未設定姓名' }} 的小朋友資訊</h6>
 
-          <div v-if="childrenLoading" class="loading-indicator">
-            載入中...
-          </div>
-
-          <div v-else-if="children.length > 0">
+          <div v-if="children.length > 0">
             <table class="table table-striped">
               <thead>
                 <tr>
                   <th>姓名</th>
                   <th>出生日期</th>
                   <th>年齡</th>
-                  <th>建立時間</th>
+                  <th>體重(kg)</th>
+                  <th>主要醫療院所</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="child in children" :key="child.uuid">
-                  <td>{{ child.name }}</td>
-                  <td>{{ formatDate(child.birthDate) }}</td>
-                  <td>{{ calculateAge(child.birthDate) }} 歲</td>
-                  <td>{{ formatDate(child.createdAt) }}</td>
+                <tr v-for="(child, index) in children" :key="index">
+                  <td>{{ child.name || '-' }}</td>
+                  <td>{{ child.birthDate || '-' }}</td>
+                  <td>{{ child.age || (child.birthDate ? calculateAge(child.birthDate) + ' 歲' : '-') }}</td>
+                  <td>{{ child.weight || '-' }}</td>
+                  <td>{{ child.primary_medical || '-' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -411,7 +411,7 @@ import FooterComponent from '@/components/layout/Footer.vue'
 import { format } from 'date-fns'
 import Swal from 'sweetalert2'
 import { UserService } from '@/services'
-import type { User, Child, Note, CreateNoteDto, UpdateNoteDto } from '@/services/types'
+import type { User, Note, CreateNoteDto, UpdateNoteDto } from '@/services/types'
 
 export default {
   name: 'UserListView',
@@ -423,10 +423,9 @@ export default {
       users: [] as User[],
       selectedUser: null as User | null,
       selectedNote: null as Note | null,
-      children: [] as Child[],
+      children: [] as any[],
       notes: [] as Note[],
       loading: false,
-      childrenLoading: false,
       notesLoading: false,
       showUserDetailModal: false,
       showChildrenModal: false,
@@ -510,25 +509,10 @@ export default {
       this.selectedUser = null
     },
 
-    async openChildrenModal(user: User) {
+    openChildrenModal(user: User) {
       this.selectedUser = user
-      this.children = []
-      this.childrenLoading = true
+      this.children = user.content?.childes || []
       this.showChildrenModal = true
-
-      try {
-        this.children = await UserService.getUserChildren(user.uuid)
-      } catch (error) {
-        console.error('Failed to fetch children:', error)
-        await Swal.fire({
-          title: '錯誤！',
-          text: '無法載入小朋友資料，請再試一次',
-          icon: 'error',
-          confirmButtonText: '確定'
-        })
-      } finally {
-        this.childrenLoading = false
-      }
     },
 
     closeChildrenModal() {
@@ -769,8 +753,13 @@ export default {
 </script>
 
 <style scoped>
-.user-column {
-  width: 25%;
+.line-name-column {
+  width: 18%;
+  white-space: normal;
+}
+
+.set-name-column {
+  width: 10%;
   white-space: normal;
 }
 
