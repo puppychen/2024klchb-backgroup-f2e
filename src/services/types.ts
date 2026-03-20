@@ -23,6 +23,7 @@ export interface User {
   pictureUrl: string | null
   content: UserContent | null
   sourceKeyword: string | null
+  sourceName: string | null
   createdAt: string
   updatedAt: string
   Children?: Child[]
