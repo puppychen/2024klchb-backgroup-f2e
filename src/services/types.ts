@@ -8,11 +8,29 @@ export interface ApiResponse<T = any> {
 }
 
 // User Management Types
+export interface UserContentChild {
+  name?: string
+  birthDate?: string
+  age?: string
+  weight?: string
+  primary_medical?: string
+  vaccineReminder?: boolean
+}
+
+export interface UserContentProfile {
+  userId?: string
+  displayName?: string
+  pictureUrl?: string
+}
+
 export interface UserContent {
   name?: string
   phone?: string
   address?: string
   email?: string
+  childes?: UserContentChild[]
+  child_number?: number
+  profile?: UserContentProfile
   [key: string]: any
 }
 
@@ -156,4 +174,19 @@ export interface Consultation {
   status: string
   createdAt: string
   updatedAt: string
+}
+
+// Source Keyword Log
+export interface SourceKeywordLog {
+  id: number
+  uuid: string
+  lineId: string
+  action: 'new' | 'overwrite' | 'unchanged'
+  newKeyword: string
+  newSourceName: string
+  oldKeyword: string | null
+  oldSourceName: string | null
+  createdAt: string
+  userName: string | null
+  userPictureUrl: string | null
 }

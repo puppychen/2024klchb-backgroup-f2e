@@ -16,7 +16,8 @@ import type {
   CreateFacilityDto,
   UpdateFacilityDto,
   Consultation,
-  SourceUser
+  SourceUser,
+  SourceKeywordLog
 } from './types'
 
 /**
@@ -272,6 +273,16 @@ export class ConsultationApi {
    */
   static async getConsultationById(uuid: string): Promise<Consultation> {
     const response = await apiClient.get(`/consultation/${uuid}`)
+    return response.data
+  }
+}
+
+/**
+ * 來源關鍵字記錄 API
+ */
+export class SourceKeywordLogApi {
+  static async getLogs(): Promise<SourceKeywordLog[]> {
+    const response = await apiClient.get('/source-keyword-log')
     return response.data
   }
 }
