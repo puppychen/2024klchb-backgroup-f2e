@@ -135,6 +135,19 @@
                           <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path>
                         </svg>
                       </a>
+                      <a :class="vaccineNotifyActionClass(user)"
+                         @click="openVaccineNotifyLogsModal(user)"
+                         :title="vaccineNotifyActionTitle(user)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"></path>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span v-if="user.vaccineNotifyLogCount > 0"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"
+                              style="font-size: 10px;">
+                          {{ user.vaccineNotifyLogCount }}
+                        </span>
+                      </a>
                     </td>
                   </tr>
                 </tbody>
@@ -306,6 +319,63 @@
       </div>
     </div>
 
+    <!-- Vaccine Notify Logs Modal -->
+    <div v-if="showVaccineNotifyLogsModal" class="modal" @click.self="closeVaccineNotifyLogsModal">
+      <div class="modal-content modal-vaccine-logs">
+        <div class="vaccine-logs-header">
+          <h2>{{ selectedUser?.content?.name || selectedUser?.name || '未設定姓名' }} 的疫苗提醒記錄</h2>
+          <button type="button" class="vaccine-logs-close" @click="closeVaccineNotifyLogsModal" aria-label="關閉">
+            &times;
+          </button>
+        </div>
+
+        <div v-if="vaccineNotifyLogsLoading" class="loading-indicator">
+          載入中...
+        </div>
+
+        <div v-else-if="vaccineNotifyLogs.length > 0" class="vaccine-logs-table-wrap">
+          <table class="table table-striped vaccine-logs-table">
+            <thead>
+              <tr>
+                <th>發送時間</th>
+                <th>狀態</th>
+                <th>小朋友</th>
+                <th>出生年月</th>
+                <th>疫苗項目</th>
+                <th>訊息內容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="log in vaccineNotifyLogs" :key="log.id">
+                <td>{{ formatDate(log.sentAt || log.createdAt) }}</td>
+                <td>
+                  <span :class="statusBadgeClass(log.status)">
+                    {{ statusLabel(log.status) }}
+                  </span>
+                </td>
+                <td>
+                  {{ log.childName }}
+                  <small class="text-muted d-block">{{ log.childBirthday }}</small>
+                </td>
+                <td>{{ formatBirthYearMonth(log.childBirthday) }}</td>
+                <td class="vaccine-names-cell">{{ log.vaccineNames.join('、') || '-' }}</td>
+                <td>
+                  <pre class="vaccine-message">{{ log.message || '無訊息內容' }}</pre>
+                  <div v-if="log.errorMessage" class="text-danger small mt-2">
+                    錯誤：{{ log.errorMessage }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else class="vaccine-logs-empty text-muted">
+          <p>此使用者暫無可追蹤的疫苗提醒記錄</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Add/Edit Note Modal -->
     <div v-if="showNoteEditModal" class="modal" @click.self="closeNoteEditModal">
       <div class="modal-content">
@@ -411,7 +481,7 @@ import FooterComponent from '@/components/layout/Footer.vue'
 import { format } from 'date-fns'
 import Swal from 'sweetalert2'
 import { UserService } from '@/services'
-import type { User, Note, CreateNoteDto, UpdateNoteDto } from '@/services/types'
+import type { User, Note, CreateNoteDto, UpdateNoteDto, VaccineNotifyLog } from '@/services/types'
 
 export default {
   name: 'UserListView',
@@ -425,11 +495,14 @@ export default {
       selectedNote: null as Note | null,
       children: [] as any[],
       notes: [] as Note[],
+      vaccineNotifyLogs: [] as VaccineNotifyLog[],
       loading: false,
       notesLoading: false,
+      vaccineNotifyLogsLoading: false,
       showUserDetailModal: false,
       showChildrenModal: false,
       showNotesModal: false,
+      showVaccineNotifyLogsModal: false,
       showNoteEditModal: false,
       showNoteDetailModal: false,
       showNoteHistoryModal: false,
@@ -548,6 +621,51 @@ export default {
       this.notes = []
     },
 
+    async openVaccineNotifyLogsModal(user: User) {
+      this.selectedUser = user
+      this.vaccineNotifyLogs = []
+      this.vaccineNotifyLogsLoading = true
+      this.showVaccineNotifyLogsModal = true
+
+      try {
+        const logs = await UserService.getUserVaccineNotifyLogs(user.uuid)
+        this.vaccineNotifyLogs = logs.slice().sort(
+          (a, b) =>
+            new Date(b.sentAt || b.createdAt).getTime() -
+            new Date(a.sentAt || a.createdAt).getTime()
+        )
+      } catch (error) {
+        console.error('Failed to fetch vaccine notify logs:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入疫苗提醒記錄，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
+      } finally {
+        this.vaccineNotifyLogsLoading = false
+      }
+    },
+
+    closeVaccineNotifyLogsModal() {
+      this.showVaccineNotifyLogsModal = false
+      this.selectedUser = null
+      this.vaccineNotifyLogs = []
+    },
+
+    vaccineNotifyActionClass(user: User) {
+      const baseClass = 'badge text-start me-2 action-vaccine position-relative'
+      return user.vaccineNotifyLogCount > 0
+        ? `${baseClass} badge-primary`
+        : `${baseClass} badge-light-secondary vaccine-no-logs`
+    },
+
+    vaccineNotifyActionTitle(user: User) {
+      return user.vaccineNotifyLogCount > 0
+        ? `${user.vaccineNotifyLogCount} 筆疫苗提醒記錄`
+        : '尚無疫苗提醒記錄'
+    },
+
     openAddNoteModal() {
       this.editingNote = null
       this.noteForm = {
@@ -660,6 +778,25 @@ export default {
     formatShortDate(dateString: string) {
       if (!dateString) return ''
       return format(new Date(dateString), 'yyyy/MM/dd')
+    },
+
+    formatBirthYearMonth(birthday: string | null) {
+      if (!birthday) return '-'
+      const match = birthday.match(/^(\d{4})[-/](\d{1,2})/)
+      if (!match) return '-'
+      return `${match[1]}/${match[2].padStart(2, '0')}`
+    },
+
+    statusLabel(status: string) {
+      if (status === 'sent') return '成功'
+      if (status === 'failed') return '失敗'
+      return status
+    },
+
+    statusBadgeClass(status: string) {
+      if (status === 'sent') return 'badge badge-light-success'
+      if (status === 'failed') return 'badge badge-light-danger'
+      return 'badge badge-light-secondary'
     },
 
     onAvatarError(event: Event) {
@@ -843,6 +980,15 @@ export default {
   background-color: #f0f0f0;
 }
 
+.action-vaccine {
+  color: #fff;
+}
+
+.vaccine-no-logs {
+  color: inherit;
+  opacity: 0.45;
+}
+
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -941,6 +1087,137 @@ pre {
   max-width: 1000px;
   min-height: 70vh;
   max-height: 90vh;
+}
+
+.modal-vaccine-logs {
+  width: min(860px, 86vw);
+  max-width: none;
+  min-height: 0;
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.vaccine-logs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.vaccine-logs-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.35;
+}
+
+.vaccine-logs-close {
+  border: none;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.vaccine-logs-close:hover {
+  color: #000;
+}
+
+.vaccine-logs-table-wrap {
+  overflow: auto;
+  padding: 16px 20px 20px;
+}
+
+.vaccine-logs-table {
+  min-width: 900px;
+  table-layout: fixed;
+  margin-bottom: 0;
+}
+
+.vaccine-logs-table th:nth-child(1),
+.vaccine-logs-table td:nth-child(1) {
+  width: 120px;
+}
+
+.vaccine-logs-table th:nth-child(2),
+.vaccine-logs-table td:nth-child(2) {
+  width: 72px;
+}
+
+.vaccine-logs-table th:nth-child(3),
+.vaccine-logs-table td:nth-child(3) {
+  width: 96px;
+}
+
+.vaccine-logs-table th:nth-child(4),
+.vaccine-logs-table td:nth-child(4) {
+  width: 140px;
+}
+
+.vaccine-logs-table th:nth-child(5),
+.vaccine-logs-table td:nth-child(5) {
+  width: 72px;
+}
+
+.vaccine-logs-table th:nth-child(6),
+.vaccine-logs-table td:nth-child(6) {
+  width: 160px;
+}
+
+.vaccine-logs-table th:nth-child(7),
+.vaccine-logs-table td:nth-child(7) {
+  width: 300px;
+}
+
+.vaccine-names-cell {
+  word-break: break-word;
+}
+
+.vaccine-logs-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 24px;
+  text-align: center;
+}
+
+.vaccine-message {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 768px) {
+  .modal-vaccine-logs {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .vaccine-logs-header {
+    padding: 16px;
+  }
+
+  .vaccine-logs-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .vaccine-logs-table-wrap {
+    padding: 12px;
+  }
 }
 
 .notes-header {

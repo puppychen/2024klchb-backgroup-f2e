@@ -17,7 +17,8 @@ import type {
   UpdateFacilityDto,
   Consultation,
   SourceUser,
-  SourceKeywordLog
+  SourceKeywordLog,
+  VaccineNotifyLog
 } from './types'
 
 /**
@@ -162,6 +163,22 @@ export class UserApi {
    */
   static async getSourceUsers(): Promise<SourceUser[]> {
     const response = await apiClient.get('/user/source-users')
+    return response.data
+  }
+
+  /**
+   * 取得疫苗提醒發送記錄
+   */
+  static async getVaccineNotifyLogs(): Promise<VaccineNotifyLog[]> {
+    const response = await apiClient.get('/user/vaccine-notify-logs')
+    return response.data
+  }
+
+  /**
+   * 取得指定用戶的疫苗提醒發送記錄
+   */
+  static async getUserVaccineNotifyLogs(userUuid: string): Promise<VaccineNotifyLog[]> {
+    const response = await apiClient.get(`/user/${userUuid}/vaccine-notify-logs`)
     return response.data
   }
 }

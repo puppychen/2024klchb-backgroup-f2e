@@ -44,6 +44,7 @@ export interface User {
   sourceName: string | null
   createdAt: string
   updatedAt: string
+  vaccineNotifyLogCount: number
   Children?: Child[]
   Note?: Note[]
 }
@@ -164,6 +165,29 @@ export interface SourceUser {
   sourceName: string
   sourceKeywordAt: string | null
   createdAt: string
+}
+
+export interface VaccineNotifyLog {
+  id: string
+  sendBatchId: string
+  status: 'sent' | 'failed' | string
+  message: string | null
+  errorMessage: string | null
+  sentAt: string | null
+  createdAt: string
+  lineId: string
+  userUuid: string
+  userLineId: string
+  userName: string | null
+  childUuid: string
+  childName: string
+  childBirthday: string
+  childBirthYear: string | null
+  vaccineNames: string[]
+  vaccineNotifyUuids: string[]
+  cycleYearMonth: string | null
+  attemptCount: number
+  attemptedAt: string | null
 }
 
 // Consultation Types

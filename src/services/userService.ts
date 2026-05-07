@@ -6,7 +6,8 @@ import type {
   CreateChildDto, 
   UpdateChildDto, 
   CreateNoteDto, 
-  UpdateNoteDto 
+  UpdateNoteDto,
+  VaccineNotifyLog
 } from './types'
 
 /**
@@ -116,6 +117,13 @@ export class UserService {
    */
   static async deleteNote(userUuid: string, noteUuid: string): Promise<Note> {
     return await UserApi.deleteNote(userUuid, noteUuid)
+  }
+
+  /**
+   * 取得用戶的疫苗提醒發送記錄
+   */
+  static async getUserVaccineNotifyLogs(userUuid: string): Promise<VaccineNotifyLog[]> {
+    return await UserApi.getUserVaccineNotifyLogs(userUuid)
   }
 
   /**

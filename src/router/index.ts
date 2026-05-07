@@ -52,6 +52,11 @@ const router = createRouter({
       component: () => import('../views/source-log/SourceLogListView.vue'),
     },
     {
+      path: '/VaccineNotifyLogList',
+      name: 'VaccineNotifyLogList',
+      component: () => import('../views/user/VaccineNotifyLogListView.vue')
+    },
+    {
       path: '/FacilityList',
       name: 'FacilityList',
       component: () => import('../views/facility/FacilityListView.vue')
