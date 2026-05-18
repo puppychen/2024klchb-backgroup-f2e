@@ -7,7 +7,8 @@ import type {
   UpdateChildDto, 
   CreateNoteDto, 
   UpdateNoteDto,
-  VaccineNotifyLog
+  VaccineNotifyLog,
+  ChatMessagesPage
 } from './types'
 
 /**
@@ -124,6 +125,16 @@ export class UserService {
    */
   static async getUserVaccineNotifyLogs(userUuid: string): Promise<VaccineNotifyLog[]> {
     return await UserApi.getUserVaccineNotifyLogs(userUuid)
+  }
+
+  /**
+   * 取得用戶的 Chime 對話訊息記錄
+   */
+  static async getUserChatMessages(
+    userUuid: string,
+    params?: { limit?: number; before?: string | null }
+  ): Promise<ChatMessagesPage> {
+    return await UserApi.getUserChatMessages(userUuid, params)
   }
 
   /**

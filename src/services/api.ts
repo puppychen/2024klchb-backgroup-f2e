@@ -18,7 +18,8 @@ import type {
   Consultation,
   SourceUser,
   SourceKeywordLog,
-  VaccineNotifyLog
+  VaccineNotifyLog,
+  ChatMessagesPage
 } from './types'
 
 /**
@@ -179,6 +180,22 @@ export class UserApi {
    */
   static async getUserVaccineNotifyLogs(userUuid: string): Promise<VaccineNotifyLog[]> {
     const response = await apiClient.get(`/user/${userUuid}/vaccine-notify-logs`)
+    return response.data
+  }
+
+  /**
+   * 取得指定用戶的對話訊息記錄
+   */
+  static async getUserChatMessages(
+    userUuid: string,
+    params?: { limit?: number; before?: string | null }
+  ): Promise<ChatMessagesPage> {
+    const response = await apiClient.get(`/user/${userUuid}/chat-messages`, {
+      params: {
+        limit: params?.limit,
+        before: params?.before || undefined
+      }
+    })
     return response.data
   }
 }

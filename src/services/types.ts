@@ -45,6 +45,10 @@ export interface User {
   createdAt: string
   updatedAt: string
   vaccineNotifyLogCount: number
+  consultationCount?: number
+  latestConsultationAt?: string | null
+  chatMessageCount?: number
+  latestChatMessageAt?: string | null
   Children?: Child[]
   Note?: Note[]
 }
@@ -188,6 +192,35 @@ export interface VaccineNotifyLog {
   cycleYearMonth: string | null
   attemptCount: number
   attemptedAt: string | null
+}
+
+export interface ChatAttachmentLog {
+  uuid: string
+  fileName: string
+  fileSize: number | null
+  fileType: string | null
+  attachmentType: string
+  status: string
+  downloadUrl: string | null
+  downloadUrlExpires: string | null
+}
+
+export interface ChatMessageLog {
+  uuid: string
+  chatRoomUuid: string
+  chatRoomTitle: string | null
+  content: string | null
+  messageType: string
+  senderType: string
+  senderName: string
+  attachments: ChatAttachmentLog[]
+  createdAt: string
+}
+
+export interface ChatMessagesPage {
+  items: ChatMessageLog[]
+  hasMore: boolean
+  nextCursor: string | null
 }
 
 // Consultation Types

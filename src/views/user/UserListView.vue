@@ -36,10 +36,11 @@
                   <tr>
                     <th class="line-name-column">Line 名稱</th>
                     <th class="set-name-column">設定名稱</th>
+                    <th class="phone-column">電話</th>
                     <th class="address-column">地址</th>
                     <th class="source-column">來源</th>
                     <th class="info-column">資訊</th>
-                    <th class="date-column">加入時間</th>
+                    <th class="date-column">最新諮詢</th>
                     <th class="actions-column">功能</th>
                   </tr>
                 </thead>
@@ -62,8 +63,12 @@
                       <span v-if="user.content?.name">{{ user.content.name }}</span>
                       <span v-else class="text-muted">-</span>
                     </td>
+                    <td class="phone-column">
+                      <span v-if="user.content?.phone">{{ user.content.phone }}</span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
                     <td class="address-column">
-                      <span v-if="user.content?.address" :title="user.content.address">{{ user.content.address.substring(0, 5) }}</span>
+                      <span v-if="user.content?.address" :title="user.content.address">{{ formatAddress(user.content.address) }}</span>
                       <span v-else class="text-muted">-</span>
                     </td>
                     <td class="source-column">
@@ -75,9 +80,14 @@
                       <span v-if="user.content?.name" class="badge badge-light-success me-1">已填資料</span>
                       <span v-if="user.content?.childes && user.content.childes.length > 0" class="badge badge-light-info me-1">{{ user.content.childes.length }} 位孩子</span>
                       <span v-if="user.Note && user.Note.length > 0" class="badge badge-light-warning me-1">{{ user.Note.length }} 筆記事</span>
-                      <span v-if="!user.content?.name && (!user.content?.childes || user.content.childes.length === 0) && (!user.Note || user.Note.length === 0)" class="text-muted">-</span>
+                      <span v-if="user.vaccineNotifyLogCount > 0" class="badge badge-light-primary me-1">{{ user.vaccineNotifyLogCount }} 筆疫苗</span>
+                      <span v-if="(user.chatMessageCount ?? 0) > 0" class="badge badge-light-secondary me-1">{{ user.chatMessageCount }} 則對話</span>
+                      <span v-if="!hasAnyInfoBadge(user)" class="text-muted">-</span>
                     </td>
-                    <td class="date-column">{{ formatShortDate(user.createdAt) }}</td>
+                    <td class="date-column">
+                      <span v-if="user.latestConsultationAt">{{ formatShortDate(user.latestConsultationAt) }}</span>
+                      <span v-else class="text-muted">{{ formatShortDate(user.createdAt) }}</span>
+                    </td>
                     <td class="actions-column">
                       <a class="badge badge-light-info text-start me-2 action-view" @click="openUserDetail(user)" title="查看詳細資料">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
@@ -146,6 +156,18 @@
                               class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"
                               style="font-size: 10px;">
                           {{ user.vaccineNotifyLogCount }}
+                        </span>
+                      </a>
+                      <a :class="chatMessagesActionClass(user)"
+                         @click="openChatMessagesDrawer(user)"
+                         :title="chatMessagesActionTitle(user)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                        </svg>
+                        <span v-if="(user.chatMessageCount ?? 0) > 0"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"
+                              style="font-size: 10px;">
+                          {{ user.chatMessageCount }}
                         </span>
                       </a>
                     </td>
@@ -376,6 +398,85 @@
       </div>
     </div>
 
+    <!-- Chat Messages Drawer -->
+    <div v-if="showChatMessagesDrawer" class="chat-drawer-backdrop" @click.self="closeChatMessagesDrawer">
+      <aside class="chat-drawer" role="dialog" aria-modal="true" aria-label="對話記錄">
+        <div class="chat-drawer-header">
+          <div>
+            <h2>對話記錄</h2>
+            <p>{{ selectedUser?.content?.name || selectedUser?.name || '未設定姓名' }}</p>
+          </div>
+          <button type="button" class="chat-drawer-close" @click="closeChatMessagesDrawer" aria-label="關閉">
+            &times;
+          </button>
+        </div>
+
+        <div ref="chatMessagesBody" class="chat-drawer-body">
+          <div ref="chatTopSentinel" class="chat-top-sentinel"></div>
+
+          <div v-if="chatMessagesHasMore" class="chat-load-more">
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              :disabled="chatMessagesLoadingMore"
+              @click="loadChatMessages(true)"
+            >
+              {{ chatMessagesLoadingMore ? '載入中...' : '載入更早訊息' }}
+            </button>
+          </div>
+
+          <div v-if="chatMessagesLoading" class="loading-indicator">
+            載入中...
+          </div>
+
+          <div v-else-if="chatMessages.length === 0" class="chat-empty text-muted">
+            此使用者暫無對話訊息記錄
+          </div>
+
+          <div v-else class="chat-message-list">
+            <div
+              v-for="message in chatMessages"
+              :key="message.uuid"
+              :class="['chat-message', `chat-message-${message.senderType}`]"
+            >
+              <div class="chat-room-label">
+                {{ message.chatRoomTitle || '未命名聊天室' }}
+              </div>
+              <div class="chat-message-meta">
+                <span>{{ message.senderName }}</span>
+                <span>{{ formatDate(message.createdAt) }}</span>
+              </div>
+              <div v-if="message.content" class="chat-message-content">
+                {{ message.content }}
+              </div>
+              <div v-if="message.attachments.length > 0" class="chat-attachments">
+                <div
+                  v-for="attachment in message.attachments"
+                  :key="attachment.uuid"
+                  class="chat-attachment"
+                >
+                  <img
+                    v-if="isImageAttachment(attachment) && attachment.downloadUrl"
+                    :src="attachment.downloadUrl"
+                    :alt="attachment.fileName"
+                    class="chat-attachment-image"
+                  />
+                  <button
+                    type="button"
+                    class="chat-attachment-link"
+                    :disabled="!attachment.downloadUrl"
+                    @click="openAttachment(attachment)"
+                  >
+                    <span>{{ attachment.fileName }}</span>
+                    <small>{{ formatFileSize(attachment.fileSize) }}</small>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
     <!-- Add/Edit Note Modal -->
     <div v-if="showNoteEditModal" class="modal" @click.self="closeNoteEditModal">
       <div class="modal-content">
@@ -481,7 +582,7 @@ import FooterComponent from '@/components/layout/Footer.vue'
 import { format } from 'date-fns'
 import Swal from 'sweetalert2'
 import { UserService } from '@/services'
-import type { User, Note, CreateNoteDto, UpdateNoteDto, VaccineNotifyLog } from '@/services/types'
+import type { User, Note, CreateNoteDto, UpdateNoteDto, VaccineNotifyLog, ChatMessageLog, ChatAttachmentLog } from '@/services/types'
 
 export default {
   name: 'UserListView',
@@ -496,16 +597,23 @@ export default {
       children: [] as any[],
       notes: [] as Note[],
       vaccineNotifyLogs: [] as VaccineNotifyLog[],
+      chatMessages: [] as ChatMessageLog[],
       loading: false,
       notesLoading: false,
       vaccineNotifyLogsLoading: false,
+      chatMessagesLoading: false,
+      chatMessagesLoadingMore: false,
       showUserDetailModal: false,
       showChildrenModal: false,
       showNotesModal: false,
       showVaccineNotifyLogsModal: false,
+      showChatMessagesDrawer: false,
       showNoteEditModal: false,
       showNoteDetailModal: false,
       showNoteHistoryModal: false,
+      chatMessagesHasMore: false,
+      chatMessagesNextCursor: null as string | null,
+      chatObserver: null as IntersectionObserver | null,
       editingNote: null as Note | null,
       editingNoteId: null as string | null,
       editNoteContent: '',
@@ -531,15 +639,28 @@ export default {
       if (!this.searchQuery) {
         return this.users
       }
-      const query = this.searchQuery.toLowerCase()
-      return this.users.filter((user: User) =>
-        user.lineId.toLowerCase().includes(query) ||
-        (user.name && user.name.toLowerCase().includes(query)) ||
-        (user.content?.name && user.content.name.toLowerCase().includes(query)) ||
-        (user.content?.phone && user.content.phone.toLowerCase().includes(query)) ||
-        (user.content?.address && user.content.address.toLowerCase().includes(query)) ||
-        (user.sourceKeyword && user.sourceKeyword.toLowerCase().includes(query))
-      )
+      const query = this.searchQuery.trim().toLowerCase()
+      if (!query) {
+        return this.users
+      }
+      return this.users.filter((user: User) => {
+        if (this.matchesInfoTag(user, query)) {
+          return true
+        }
+
+        return user.lineId.toLowerCase().includes(query) ||
+          (user.name && user.name.toLowerCase().includes(query)) ||
+          (user.content?.name && user.content.name.toLowerCase().includes(query)) ||
+          (user.content?.phone && user.content.phone.toLowerCase().includes(query)) ||
+          (user.content?.address && user.content.address.toLowerCase().includes(query)) ||
+          (user.sourceKeyword && user.sourceKeyword.toLowerCase().includes(query)) ||
+          (user.sourceName && user.sourceName.toLowerCase().includes(query))
+      })
+    }
+  },
+  watch: {
+    searchQuery() {
+      this.currentPage = 1
     }
   },
   methods: {
@@ -558,6 +679,30 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    matchesInfoTag(user: User, query: string) {
+      const tagMatchers: Record<string, boolean> = {
+        '已填資料': Boolean(user.content?.name),
+        '孩子': Boolean(user.content?.childes && user.content.childes.length > 0),
+        '記事': Boolean(user.Note && user.Note.length > 0),
+        '疫苗': user.vaccineNotifyLogCount > 0,
+        '對話': (user.chatMessageCount ?? 0) > 0
+      }
+
+      return Object.entries(tagMatchers).some(([tag, matched]) =>
+        tag.includes(query) && matched
+      )
+    },
+
+    hasAnyInfoBadge(user: User) {
+      return Boolean(
+        user.content?.name ||
+        (user.content?.childes && user.content.childes.length > 0) ||
+        (user.Note && user.Note.length > 0) ||
+        user.vaccineNotifyLogCount > 0 ||
+        (user.chatMessageCount ?? 0) > 0
+      )
     },
 
     prevPage() {
@@ -664,6 +809,147 @@ export default {
       return user.vaccineNotifyLogCount > 0
         ? `${user.vaccineNotifyLogCount} 筆疫苗提醒記錄`
         : '尚無疫苗提醒記錄'
+    },
+
+    chatMessagesActionClass(user: User) {
+      const baseClass = 'badge text-start me-2 action-chat position-relative'
+      return (user.chatMessageCount ?? 0) > 0
+        ? `${baseClass} badge-info`
+        : `${baseClass} badge-light-secondary chat-no-messages`
+    },
+
+    chatMessagesActionTitle(user: User) {
+      return (user.chatMessageCount ?? 0) > 0
+        ? `${user.chatMessageCount} 則對話訊息`
+        : '尚無對話訊息'
+    },
+
+    async openChatMessagesDrawer(user: User) {
+      this.selectedUser = user
+      this.chatMessages = []
+      this.chatMessagesHasMore = false
+      this.chatMessagesNextCursor = null
+      this.showChatMessagesDrawer = true
+      document.addEventListener('keydown', this.handleChatDrawerKey)
+      await this.loadChatMessages(false)
+      this.$nextTick(() => {
+        this.setupChatObserver()
+      })
+    },
+
+    closeChatMessagesDrawer() {
+      this.disconnectChatObserver()
+      document.removeEventListener('keydown', this.handleChatDrawerKey)
+      this.showChatMessagesDrawer = false
+      this.selectedUser = null
+      this.chatMessages = []
+      this.chatMessagesHasMore = false
+      this.chatMessagesNextCursor = null
+    },
+
+    handleChatDrawerKey(event: KeyboardEvent) {
+      if (event.key === 'Escape' && this.showChatMessagesDrawer) {
+        this.closeChatMessagesDrawer()
+      }
+    },
+
+    async loadChatMessages(loadMore = false) {
+      if (!this.selectedUser) return
+      if (loadMore && (!this.chatMessagesHasMore || !this.chatMessagesNextCursor)) return
+      if (this.chatMessagesLoading || this.chatMessagesLoadingMore) return
+
+      const body = this.$refs.chatMessagesBody as HTMLElement | undefined
+      const previousScrollHeight = body?.scrollHeight || 0
+
+      if (loadMore) {
+        this.chatMessagesLoadingMore = true
+      } else {
+        this.chatMessagesLoading = true
+      }
+
+      try {
+        const page = await UserService.getUserChatMessages(this.selectedUser.uuid, {
+          limit: 100,
+          before: loadMore ? this.chatMessagesNextCursor : null
+        })
+        const displayMessages = page.items.slice().reverse()
+
+        if (loadMore) {
+          this.chatMessages = [...displayMessages, ...this.chatMessages]
+        } else {
+          this.chatMessages = displayMessages
+        }
+        this.chatMessagesHasMore = page.hasMore
+        this.chatMessagesNextCursor = page.nextCursor
+
+        this.$nextTick(() => {
+          const currentBody = this.$refs.chatMessagesBody as HTMLElement | undefined
+          if (!currentBody) return
+
+          if (loadMore) {
+            currentBody.scrollTop += currentBody.scrollHeight - previousScrollHeight
+          } else {
+            currentBody.scrollTop = currentBody.scrollHeight
+          }
+        })
+      } catch (error) {
+        console.error('Failed to fetch chat messages:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入對話訊息，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
+      } finally {
+        this.chatMessagesLoading = false
+        this.chatMessagesLoadingMore = false
+      }
+    },
+
+    setupChatObserver() {
+      this.disconnectChatObserver()
+      const sentinel = this.$refs.chatTopSentinel as HTMLElement | undefined
+      const body = this.$refs.chatMessagesBody as HTMLElement | undefined
+      if (!sentinel || !body) return
+
+      this.chatObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0]
+        if (
+          entry.isIntersecting &&
+          this.chatMessagesHasMore &&
+          !this.chatMessagesLoading &&
+          !this.chatMessagesLoadingMore
+        ) {
+          this.loadChatMessages(true)
+        }
+      }, {
+        root: body,
+        threshold: 0.1
+      })
+      this.chatObserver.observe(sentinel)
+    },
+
+    disconnectChatObserver() {
+      if (this.chatObserver) {
+        this.chatObserver.disconnect()
+        this.chatObserver = null
+      }
+    },
+
+    isImageAttachment(attachment: ChatAttachmentLog) {
+      return attachment.attachmentType === 'image' || Boolean(attachment.fileType?.startsWith('image/'))
+    },
+
+    openAttachment(attachment: ChatAttachmentLog) {
+      if (!attachment.downloadUrl) return
+      window.open(attachment.downloadUrl, '_blank', 'noopener')
+    },
+
+    formatFileSize(fileSize: number | null) {
+      if (!fileSize) return '大小未知'
+      if (fileSize < 1024) return `${fileSize} B`
+      if (fileSize < 1024 * 1024) return `${(fileSize / 1024).toFixed(1)} KB`
+      return `${(fileSize / 1024 / 1024).toFixed(1)} MB`
     },
 
     openAddNoteModal() {
@@ -773,6 +1059,11 @@ export default {
     formatDate(dateString: string) {
       if (!dateString) return ''
       return format(new Date(dateString), 'yyyy/MM/dd HH:mm')
+    },
+
+    formatAddress(address: string) {
+      if (!address) return ''
+      return address.length > 12 ? `${address.substring(0, 12)}...` : address
     },
 
     formatShortDate(dateString: string) {
@@ -885,13 +1176,18 @@ export default {
 
   mounted() {
     this.fetchUsers()
+  },
+
+  beforeUnmount() {
+    this.disconnectChatObserver()
+    document.removeEventListener('keydown', this.handleChatDrawerKey)
   }
 }
 </script>
 
 <style scoped>
 .line-name-column {
-  width: 18%;
+  width: 15%;
   white-space: normal;
 }
 
@@ -901,25 +1197,30 @@ export default {
 }
 
 .phone-column {
-  width: 12%;
+  width: 10%;
   word-wrap: break-word;
   word-break: break-all;
 }
 
+.address-column {
+  width: 12%;
+  word-break: break-word;
+}
+
 .source-column {
-  width: 13%;
+  width: 10%;
 }
 
 .info-column {
-  width: 18%;
+  width: 17%;
 }
 
 .date-column {
-  width: 12%;
+  width: 10%;
 }
 
 .actions-column {
-  width: 15%;
+  width: 16%;
 }
 
 .user-cell {
@@ -985,6 +1286,15 @@ export default {
 }
 
 .vaccine-no-logs {
+  color: inherit;
+  opacity: 0.45;
+}
+
+.action-chat {
+  color: #fff;
+}
+
+.chat-no-messages {
   color: inherit;
   opacity: 0.45;
 }
@@ -1201,6 +1511,202 @@ pre {
   font-size: 0.82rem;
 }
 
+.chat-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(17, 24, 39, 0.48);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-drawer {
+  width: min(560px, 100vw);
+  height: 100vh;
+  background: #f8fafc;
+  box-shadow: -18px 0 40px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+  animation: chat-drawer-slide-in 0.18s ease-out;
+}
+
+@keyframes chat-drawer-slide-in {
+  from {
+    transform: translateX(40px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.chat-drawer-header {
+  background: #fff;
+  border-bottom: 1px solid #d9e2ef;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 22px;
+  flex-shrink: 0;
+}
+
+.chat-drawer-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1f2a44;
+}
+
+.chat-drawer-header p {
+  margin: 4px 0 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.chat-drawer-close {
+  border: none;
+  background: transparent;
+  color: #8a94a6;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.chat-drawer-close:hover {
+  color: #1f2937;
+}
+
+.chat-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 24px;
+}
+
+.chat-top-sentinel {
+  height: 1px;
+}
+
+.chat-load-more {
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.chat-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chat-message {
+  max-width: 82%;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border-left: 4px solid #94a3b8;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
+}
+
+.chat-message-user {
+  align-self: flex-start;
+  border-left-color: #2563eb;
+  background: #dbeafe;
+}
+
+.chat-message-consultant {
+  align-self: flex-end;
+  border-left-color: #0891b2;
+  background: #cffafe;
+}
+
+.chat-message-system {
+  align-self: center;
+  border-left-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.chat-room-label {
+  color: #64748b;
+  font-size: 0.74rem;
+  margin-bottom: 5px;
+}
+
+.chat-message-meta {
+  color: #475569;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.chat-message-content {
+  color: #1f2937;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-attachments {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-attachment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-attachment-image {
+  max-width: 240px;
+  max-height: 180px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.chat-attachment-link {
+  border: 1px solid rgba(37, 99, 235, 0.24);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #1d4ed8;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+  width: fit-content;
+  max-width: 260px;
+}
+
+.chat-attachment-link:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.chat-attachment-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-attachment-link small {
+  color: #64748b;
+}
+
 @media (max-width: 768px) {
   .modal-vaccine-logs {
     width: calc(100vw - 24px);
@@ -1217,6 +1723,14 @@ pre {
 
   .vaccine-logs-table-wrap {
     padding: 12px;
+  }
+
+  .chat-drawer {
+    width: 100vw;
+  }
+
+  .chat-message {
+    max-width: 92%;
   }
 }
 
