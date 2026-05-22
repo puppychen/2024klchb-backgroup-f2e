@@ -23,6 +23,19 @@
                     <input type="text" class="form-control" v-model="searchQuery" id="inputSearch" placeholder="關鍵字搜尋">
                   </div>
                 </div>
+                <div class="col-sm-4 my-2">
+                  <label for="sourceTagFilter" class="form-label">來源標籤</label>
+                  <select id="sourceTagFilter" class="form-control" v-model="selectedSourceTag">
+                    <option value="">全部來源標籤</option>
+                    <option
+                      v-for="tag in sourceTagOptions"
+                      :key="tag.value"
+                      :value="tag.value"
+                    >
+                      {{ tag.label }}（{{ tag.count }}）
+                    </option>
+                  </select>
+                </div>
               </div>
 
               <hr class="my-5">
@@ -31,64 +44,56 @@
                 Loading...
               </div>
 
-              <table v-else id="user-list" class="table dt-table-hover" style="width:100%">
-                <thead>
-                  <tr>
-                    <th class="line-name-column">Line 名稱</th>
-                    <th class="set-name-column">設定名稱</th>
-                    <th class="phone-column">電話</th>
-                    <th class="address-column">地址</th>
-                    <th class="source-column">來源</th>
-                    <th class="info-column">資訊</th>
-                    <th class="date-column">最新諮詢</th>
-                    <th class="actions-column">功能</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="user in paginatedItems" :key="user.uuid">
-                    <td class="line-name-column">
-                      <div class="user-cell">
-                        <img
-                          :src="user.pictureUrl || defaultAvatar"
-                          class="user-avatar"
-                          @error="onAvatarError($event)"
-                          alt="avatar"
-                        />
-                        <a href="#" @click.prevent="openUserDetail(user)" class="user-line-name">
-                          {{ user.name || '未設定' }}
-                        </a>
-                      </div>
-                    </td>
-                    <td class="set-name-column">
-                      <span v-if="user.content?.name">{{ user.content.name }}</span>
-                      <span v-else class="text-muted">-</span>
-                    </td>
-                    <td class="phone-column">
-                      <span v-if="user.content?.phone">{{ user.content.phone }}</span>
-                      <span v-else class="text-muted">-</span>
-                    </td>
-                    <td class="address-column">
-                      <span v-if="user.content?.address" :title="user.content.address">{{ formatAddress(user.content.address) }}</span>
-                      <span v-else class="text-muted">-</span>
-                    </td>
-                    <td class="source-column">
-                      <span v-if="user.sourceName" class="badge badge-light-primary">{{ user.sourceName }}</span>
-                      <span v-else-if="user.sourceKeyword" class="badge badge-light-secondary">{{ user.sourceKeyword }}</span>
-                      <span v-else class="text-muted">-</span>
-                    </td>
-                    <td class="info-column">
-                      <span v-if="user.content?.name" class="badge badge-light-success me-1">已填資料</span>
-                      <span v-if="user.content?.childes && user.content.childes.length > 0" class="badge badge-light-info me-1">{{ user.content.childes.length }} 位孩子</span>
-                      <span v-if="user.Note && user.Note.length > 0" class="badge badge-light-warning me-1">{{ user.Note.length }} 筆記事</span>
-                      <span v-if="user.vaccineNotifyLogCount > 0" class="badge badge-light-primary me-1">{{ user.vaccineNotifyLogCount }} 筆疫苗</span>
-                      <span v-if="(user.chatMessageCount ?? 0) > 0" class="badge badge-light-secondary me-1">{{ user.chatMessageCount }} 則對話</span>
-                      <span v-if="!hasAnyInfoBadge(user)" class="text-muted">-</span>
-                    </td>
-                    <td class="date-column">
-                      <span v-if="user.latestConsultationAt">{{ formatShortDate(user.latestConsultationAt) }}</span>
-                      <span v-else class="text-muted">{{ formatShortDate(user.createdAt) }}</span>
-                    </td>
-                    <td class="actions-column">
+              <div v-else class="user-table-scroll">
+                <table id="user-list" class="table dt-table-hover user-table">
+                  <thead>
+                    <tr>
+                      <th class="line-name-column">Line 名稱</th>
+                      <th class="set-name-column">姓名</th>
+                      <th class="phone-column">電話</th>
+                      <th class="address-column">地址</th>
+                      <th class="source-column">來源</th>
+                      <th class="date-column">最新諮詢</th>
+                      <th class="actions-column">功能</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="user in paginatedItems" :key="user.uuid">
+                      <td class="line-name-column">
+                        <div class="user-cell">
+                          <img
+                            :src="user.pictureUrl || defaultAvatar"
+                            class="user-avatar"
+                            @error="onAvatarError($event)"
+                            alt="avatar"
+                          />
+                          <a href="#" @click.prevent="openUserDetail(user)" class="user-line-name">
+                            {{ user.name || '未設定' }}
+                          </a>
+                        </div>
+                      </td>
+                      <td class="set-name-column">
+                        <span v-if="user.content?.name">{{ user.content.name }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="phone-column">
+                        <span v-if="user.content?.phone">{{ user.content.phone }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="address-column">
+                        <span v-if="user.content?.address" :title="user.content.address">{{ formatAddress(user.content.address) }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="source-column">
+                        <span v-if="user.sourceName" class="badge badge-light-primary">{{ user.sourceName }}</span>
+                        <span v-else-if="user.sourceKeyword" class="badge badge-light-secondary">{{ user.sourceKeyword }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="date-column">
+                        <span v-if="user.latestConsultationAt">{{ formatShortDate(user.latestConsultationAt) }}</span>
+                        <span v-else class="text-muted">{{ formatShortDate(user.createdAt) }}</span>
+                      </td>
+                      <td class="actions-column">
                       <a class="badge badge-light-info text-start me-2 action-view" @click="openUserDetail(user)" title="查看詳細資料">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -170,10 +175,11 @@
                           {{ user.chatMessageCount }}
                         </span>
                       </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
               <div class="pagination-controls">
                 <button class="btn btn-outline-dark btn-rounded waves-effect waves-light" @click="prevPage" :disabled="currentPage === 1">上一頁</button>
@@ -212,7 +218,7 @@
           <p><strong>姓名:</strong> {{ selectedUser.content?.name || '未設定' }}</p>
           <p><strong>電話:</strong> {{ selectedUser.content?.phone || '未設定' }}</p>
           <p><strong>地址:</strong> {{ selectedUser.content?.address || '未設定' }}</p>
-          <p><strong>來源:</strong> {{ selectedUser.sourceKeyword || '未設定' }}</p>
+          <p><strong>來源:</strong> {{ selectedUser.sourceName || selectedUser.sourceKeyword || '未設定' }}</p>
           <p><strong>建立時間:</strong> {{ formatDate(selectedUser.createdAt) }}</p>
           <p><strong>更新時間:</strong> {{ formatDate(selectedUser.updatedAt) }}</p>
           <div v-if="selectedUser.content" class="mt-4">
@@ -618,6 +624,7 @@ export default {
       editingNoteId: null as string | null,
       editNoteContent: '',
       searchQuery: '',
+      selectedSourceTag: '',
       currentPage: 1,
       itemsPerPage: 50,
       defaultAvatar: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjY2NjIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAzYzEuNjYgMCAzIDEuMzQgMyAzcy0xLjM0IDMtMyAzLTMtMS4zNC0zLTMgMS4zNC0zIDMtM3ptMCAxNC4yYy0yLjUgMC00LjcxLTEuMjgtNi0zLjIyLjAzLTEuOTkgNC0zLjA4IDYtMy4wOCAxLjk5IDAgNS45NyAxLjA5IDYgMy4wOC0xLjI5IDEuOTQtMy41IDMuMjItNiAzLjIyeiIvPjwvc3ZnPg==',
@@ -636,14 +643,21 @@ export default {
       return Math.ceil(this.filteredItems.length / this.itemsPerPage)
     },
     filteredItems() {
+      let users = this.users
+      if (this.selectedSourceTag) {
+        users = users.filter((user: User) =>
+          this.sourceTagValue(user) === this.selectedSourceTag
+        )
+      }
+
       if (!this.searchQuery) {
-        return this.users
+        return users
       }
       const query = this.searchQuery.trim().toLowerCase()
       if (!query) {
-        return this.users
+        return users
       }
-      return this.users.filter((user: User) => {
+      return users.filter((user: User) => {
         if (this.matchesInfoTag(user, query)) {
           return true
         }
@@ -656,10 +670,30 @@ export default {
           (user.sourceKeyword && user.sourceKeyword.toLowerCase().includes(query)) ||
           (user.sourceName && user.sourceName.toLowerCase().includes(query))
       })
+    },
+    sourceTagOptions() {
+      const tagMap = new Map<string, { value: string; label: string; count: number }>()
+      this.users.forEach((user: User) => {
+        const value = this.sourceTagValue(user)
+        if (!value) return
+
+        const label = user.sourceName || user.sourceKeyword || value
+        const current = tagMap.get(value)
+        if (current) {
+          current.count += 1
+        } else {
+          tagMap.set(value, { value, label, count: 1 })
+        }
+      })
+
+      return [...tagMap.values()].sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'))
     }
   },
   watch: {
     searchQuery() {
+      this.currentPage = 1
+    },
+    selectedSourceTag() {
       this.currentPage = 1
     }
   },
@@ -695,14 +729,8 @@ export default {
       )
     },
 
-    hasAnyInfoBadge(user: User) {
-      return Boolean(
-        user.content?.name ||
-        (user.content?.childes && user.content.childes.length > 0) ||
-        (user.Note && user.Note.length > 0) ||
-        user.vaccineNotifyLogCount > 0 ||
-        (user.chatMessageCount ?? 0) > 0
-      )
+    sourceTagValue(user: User) {
+      return user.sourceKeyword || user.sourceName || ''
     },
 
     prevPage() {
@@ -1187,40 +1215,51 @@ export default {
 
 <style scoped>
 .line-name-column {
-  width: 15%;
+  width: 170px;
   white-space: normal;
 }
 
 .set-name-column {
-  width: 10%;
+  width: 120px;
   white-space: normal;
 }
 
 .phone-column {
-  width: 10%;
+  width: 120px;
   word-wrap: break-word;
   word-break: break-all;
 }
 
 .address-column {
-  width: 12%;
+  width: 150px;
   word-break: break-word;
 }
 
 .source-column {
-  width: 10%;
-}
-
-.info-column {
-  width: 17%;
+  width: 120px;
 }
 
 .date-column {
-  width: 10%;
+  width: 110px;
 }
 
 .actions-column {
-  width: 16%;
+  width: 260px;
+}
+
+.user-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.user-table {
+  width: 100%;
+  min-width: 1050px;
+  table-layout: fixed;
+  margin-bottom: 0;
 }
 
 .user-cell {

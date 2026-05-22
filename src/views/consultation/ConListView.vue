@@ -78,6 +78,11 @@
                           <line x1="9" y1="17" x2="15" y2="17"></line>
                         </svg>
                       </a>
+                      <a class="badge badge-info text-start me-2 action-chat" @click="openChatMessagesDrawer(item)" :class="{ 'disabled': !item.userUuid }" :title="item.userUuid ? '對話記錄' : '無用戶UUID，無法查看對話記錄'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-message-circle">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                      </a>
                     </td>
                   </tr>
                 </tbody>
@@ -192,6 +197,85 @@
       </div>
     </div>
 
+    <!-- Chat Messages Drawer -->
+    <div v-if="showChatMessagesDrawer" class="chat-drawer-backdrop" @click.self="closeChatMessagesDrawer">
+      <aside class="chat-drawer" role="dialog" aria-modal="true" aria-label="對話記錄">
+        <div class="chat-drawer-header">
+          <div>
+            <h2>對話記錄</h2>
+            <p>{{ selectedChatUserName || '未設定姓名' }}</p>
+          </div>
+          <button type="button" class="chat-drawer-close" @click="closeChatMessagesDrawer" aria-label="關閉">
+            &times;
+          </button>
+        </div>
+
+        <div ref="chatMessagesBody" class="chat-drawer-body">
+          <div ref="chatTopSentinel" class="chat-top-sentinel"></div>
+
+          <div v-if="chatMessagesHasMore" class="chat-load-more">
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              :disabled="chatMessagesLoadingMore"
+              @click="loadChatMessages(true)"
+            >
+              {{ chatMessagesLoadingMore ? '載入中...' : '載入更早訊息' }}
+            </button>
+          </div>
+
+          <div v-if="chatMessagesLoading" class="loading-indicator">
+            載入中...
+          </div>
+
+          <div v-else-if="chatMessages.length === 0" class="chat-empty text-muted">
+            此使用者暫無對話訊息記錄
+          </div>
+
+          <div v-else class="chat-message-list">
+            <div
+              v-for="message in chatMessages"
+              :key="message.uuid"
+              :class="['chat-message', `chat-message-${message.senderType}`]"
+            >
+              <div class="chat-room-label">
+                {{ message.chatRoomTitle || '未命名聊天室' }}
+              </div>
+              <div class="chat-message-meta">
+                <span>{{ message.senderName }}</span>
+                <span>{{ formatDate(message.createdAt) }}</span>
+              </div>
+              <div v-if="message.content" class="chat-message-content">
+                {{ message.content }}
+              </div>
+              <div v-if="message.attachments.length > 0" class="chat-attachments">
+                <div
+                  v-for="attachment in message.attachments"
+                  :key="attachment.uuid"
+                  class="chat-attachment"
+                >
+                  <img
+                    v-if="isImageAttachment(attachment) && attachment.downloadUrl"
+                    :src="attachment.downloadUrl"
+                    :alt="attachment.fileName"
+                    class="chat-attachment-image"
+                  />
+                  <button
+                    type="button"
+                    class="chat-attachment-link"
+                    :disabled="!attachment.downloadUrl"
+                    @click="openAttachment(attachment)"
+                  >
+                    <span>{{ attachment.fileName }}</span>
+                    <small>{{ formatFileSize(attachment.fileSize) }}</small>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
     <!-- Add/Edit Note Modal -->
     <div v-if="showNoteEditModal" class="modal" @click.self="closeNoteEditModal">
       <div class="modal-content">
@@ -298,11 +382,11 @@ import apiClient from '@/utils/axios';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
 import { UserService } from '@/services';
-import type { User, Note, CreateNoteDto, UpdateNoteDto } from '@/services/types';
+import type { User, Note, CreateNoteDto, UpdateNoteDto, ChatMessageLog, ChatAttachmentLog } from '@/services/types';
 
 interface ConsultationItem {
   uuid: string;
-  userId: number;
+  userId?: number;
   userUuid?: string;
   lineName: string;
   name: string;
@@ -310,7 +394,7 @@ interface ConsultationItem {
   address: string;
   childName: string;
   yearSelected: string;
-  weight: number | null;
+  weight: string;
   primaryMedical: string;
   topicSelected: string;
   content: string;
@@ -347,6 +431,16 @@ export default {
       editNoteContent: '',
       showNoteHistoryModal: false,
       selectedNote: null as Note | null,
+      // Chat messages drawer data
+      selectedChatUserUuid: null as string | null,
+      selectedChatUserName: '',
+      chatMessages: [] as ChatMessageLog[],
+      chatMessagesLoading: false,
+      chatMessagesLoadingMore: false,
+      showChatMessagesDrawer: false,
+      chatMessagesHasMore: false,
+      chatMessagesNextCursor: null as string | null,
+      chatObserver: null as IntersectionObserver | null,
       noteForm: {
         content: ''
       }
@@ -380,11 +474,11 @@ export default {
       return this.sortedItems.filter(item => {
         const query = this.searchQuery.toLowerCase();
         return (
-          item.lineName.toLowerCase().includes(query) ||
-          item.name.toLowerCase().includes(query) ||
-          item.phone.toLowerCase().includes(query) ||
-          item.yearSelected.toLowerCase().includes(query) ||
-          item.content.toLowerCase().includes(query)
+          this.safeText(item.lineName).toLowerCase().includes(query) ||
+          this.safeText(item.name).toLowerCase().includes(query) ||
+          this.safeText(item.phone).toLowerCase().includes(query) ||
+          this.safeText(item.yearSelected).toLowerCase().includes(query) ||
+          this.safeText(item.content).toLowerCase().includes(query)
         );
       });
     }
@@ -394,12 +488,36 @@ export default {
       this.loading = true;
       try {
         const response = await apiClient.get('/consultation');
-        this.items = response.data;
+        this.items = response.data.map((item: Partial<ConsultationItem>) =>
+          this.normalizeConsultationItem(item)
+        );
       } catch (error) {
         console.error('Error fetching consultation data:', error);
       } finally {
         this.loading = false;
       }
+    },
+    normalizeConsultationItem(item: Partial<ConsultationItem>): ConsultationItem {
+      return {
+        uuid: this.safeText(item.uuid),
+        userId: item.userId,
+        userUuid: item.userUuid,
+        lineName: this.safeText(item.lineName),
+        name: this.safeText(item.name),
+        phone: this.safeText(item.phone),
+        address: this.safeText(item.address),
+        childName: this.safeText(item.childName),
+        yearSelected: this.safeText(item.yearSelected),
+        weight: this.safeText(item.weight),
+        primaryMedical: this.safeText(item.primaryMedical),
+        topicSelected: this.safeText(item.topicSelected),
+        content: this.safeText(item.content),
+        createdAt: this.safeText(item.createdAt),
+        updatedAt: this.safeText(item.updatedAt)
+      };
+    },
+    safeText(value: unknown): string {
+      return typeof value === 'string' ? value : '';
     },
     prevPage() {
       if (this.currentPage > 1) {
@@ -648,10 +766,154 @@ export default {
     backToNotesList() {
       this.showNoteHistoryModal = false
       // Keep the notes modal open so user can continue operating
+    },
+
+    async openChatMessagesDrawer(item: ConsultationItem) {
+      if (!item.userUuid) {
+        await Swal.fire({
+          title: '無法操作！',
+          text: '此諮詢記錄沒有關聯的用戶UUID，無法查看對話記錄',
+          icon: 'warning',
+          confirmButtonText: '確定'
+        })
+        return
+      }
+
+      this.selectedChatUserUuid = item.userUuid
+      this.selectedChatUserName = item.name || item.lineName || '未設定姓名'
+      this.chatMessages = []
+      this.chatMessagesHasMore = false
+      this.chatMessagesNextCursor = null
+      this.showChatMessagesDrawer = true
+      document.addEventListener('keydown', this.handleChatDrawerKey)
+      await this.loadChatMessages(false)
+      this.$nextTick(() => {
+        this.setupChatObserver()
+      })
+    },
+
+    closeChatMessagesDrawer() {
+      this.disconnectChatObserver()
+      document.removeEventListener('keydown', this.handleChatDrawerKey)
+      this.showChatMessagesDrawer = false
+      this.selectedChatUserUuid = null
+      this.selectedChatUserName = ''
+      this.chatMessages = []
+      this.chatMessagesHasMore = false
+      this.chatMessagesNextCursor = null
+    },
+
+    handleChatDrawerKey(event: KeyboardEvent) {
+      if (event.key === 'Escape' && this.showChatMessagesDrawer) {
+        this.closeChatMessagesDrawer()
+      }
+    },
+
+    async loadChatMessages(loadMore = false) {
+      if (!this.selectedChatUserUuid) return
+      if (loadMore && (!this.chatMessagesHasMore || !this.chatMessagesNextCursor)) return
+      if (this.chatMessagesLoading || this.chatMessagesLoadingMore) return
+
+      const body = this.$refs.chatMessagesBody as HTMLElement | undefined
+      const previousScrollHeight = body?.scrollHeight || 0
+
+      if (loadMore) {
+        this.chatMessagesLoadingMore = true
+      } else {
+        this.chatMessagesLoading = true
+      }
+
+      try {
+        const page = await UserService.getUserChatMessages(this.selectedChatUserUuid, {
+          limit: 100,
+          before: loadMore ? this.chatMessagesNextCursor : null
+        })
+        const displayMessages = page.items.slice().reverse()
+
+        if (loadMore) {
+          this.chatMessages = [...displayMessages, ...this.chatMessages]
+        } else {
+          this.chatMessages = displayMessages
+        }
+        this.chatMessagesHasMore = page.hasMore
+        this.chatMessagesNextCursor = page.nextCursor
+
+        this.$nextTick(() => {
+          const currentBody = this.$refs.chatMessagesBody as HTMLElement | undefined
+          if (!currentBody) return
+
+          if (loadMore) {
+            currentBody.scrollTop += currentBody.scrollHeight - previousScrollHeight
+          } else {
+            currentBody.scrollTop = currentBody.scrollHeight
+          }
+        })
+      } catch (error) {
+        console.error('Failed to fetch chat messages:', error)
+        await Swal.fire({
+          title: '錯誤！',
+          text: '無法載入對話訊息，請再試一次',
+          icon: 'error',
+          confirmButtonText: '確定'
+        })
+      } finally {
+        this.chatMessagesLoading = false
+        this.chatMessagesLoadingMore = false
+      }
+    },
+
+    setupChatObserver() {
+      this.disconnectChatObserver()
+      const sentinel = this.$refs.chatTopSentinel as HTMLElement | undefined
+      const body = this.$refs.chatMessagesBody as HTMLElement | undefined
+      if (!sentinel || !body) return
+
+      this.chatObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0]
+        if (
+          entry.isIntersecting &&
+          this.chatMessagesHasMore &&
+          !this.chatMessagesLoading &&
+          !this.chatMessagesLoadingMore
+        ) {
+          this.loadChatMessages(true)
+        }
+      }, {
+        root: body,
+        threshold: 0.1
+      })
+      this.chatObserver.observe(sentinel)
+    },
+
+    disconnectChatObserver() {
+      if (this.chatObserver) {
+        this.chatObserver.disconnect()
+        this.chatObserver = null
+      }
+    },
+
+    isImageAttachment(attachment: ChatAttachmentLog) {
+      return attachment.attachmentType === 'image' || Boolean(attachment.fileType?.startsWith('image/'))
+    },
+
+    openAttachment(attachment: ChatAttachmentLog) {
+      if (!attachment.downloadUrl) return
+      window.open(attachment.downloadUrl, '_blank', 'noopener')
+    },
+
+    formatFileSize(fileSize: number | null) {
+      if (!fileSize) return '大小未知'
+      if (fileSize < 1024) return `${fileSize} B`
+      if (fileSize < 1024 * 1024) return `${(fileSize / 1024).toFixed(1)} KB`
+      return `${(fileSize / 1024 / 1024).toFixed(1)} MB`
     }
   },
   mounted() {
     this.fetchConsultationData();
+  },
+  beforeUnmount() {
+    this.disconnectChatObserver()
+    document.removeEventListener('keydown', this.handleChatDrawerKey)
   }
 };
 </script>
@@ -1045,5 +1307,216 @@ export default {
 .no-history svg {
   opacity: 0.5;
   margin-bottom: 15px;
+}
+
+.action-chat {
+  background-color: #e7f5ff;
+  color: #1971c2;
+}
+
+.chat-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(17, 24, 39, 0.48);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-drawer {
+  width: min(560px, 100vw);
+  height: 100vh;
+  background: #f8fafc;
+  box-shadow: -18px 0 40px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+  animation: chat-drawer-slide-in 0.18s ease-out;
+}
+
+@keyframes chat-drawer-slide-in {
+  from {
+    transform: translateX(40px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.chat-drawer-header {
+  background: #fff;
+  border-bottom: 1px solid #d9e2ef;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 22px;
+  flex-shrink: 0;
+}
+
+.chat-drawer-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1f2a44;
+}
+
+.chat-drawer-header p {
+  margin: 4px 0 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.chat-drawer-close {
+  border: none;
+  background: transparent;
+  color: #8a94a6;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.chat-drawer-close:hover {
+  color: #1f2937;
+}
+
+.chat-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 24px;
+}
+
+.chat-top-sentinel {
+  height: 1px;
+}
+
+.chat-load-more {
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.chat-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chat-message {
+  max-width: 82%;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border-left: 4px solid #94a3b8;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
+}
+
+.chat-message-user {
+  align-self: flex-start;
+  border-left-color: #2563eb;
+  background: #dbeafe;
+}
+
+.chat-message-consultant {
+  align-self: flex-end;
+  border-left-color: #0891b2;
+  background: #cffafe;
+}
+
+.chat-message-system {
+  align-self: center;
+  border-left-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.chat-room-label {
+  color: #64748b;
+  font-size: 0.74rem;
+  margin-bottom: 5px;
+}
+
+.chat-message-meta {
+  color: #475569;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.chat-message-content {
+  color: #1f2937;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-attachments {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-attachment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-attachment-image {
+  max-width: 240px;
+  max-height: 180px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.chat-attachment-link {
+  border: 1px solid rgba(37, 99, 235, 0.24);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #1d4ed8;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+  width: fit-content;
+  max-width: 260px;
+}
+
+.chat-attachment-link:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.chat-attachment-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-attachment-link small {
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .chat-drawer {
+    width: 100vw;
+  }
+
+  .chat-message {
+    max-width: 92%;
+  }
 }
 </style>
