@@ -15,6 +15,9 @@ export interface UserContentChild {
   weight?: string
   primary_medical?: string
   vaccineReminder?: boolean
+  // 幼兒專責醫師加入狀態（來自 LIFF profile 表單，'' 代表未作答）
+  pediatricianStatus?: 'joined' | 'interested' | 'not_interested' | ''
+  pediatricianClinic?: { code: string; name: string; isManual: boolean } | null
 }
 
 export interface UserContentProfile {

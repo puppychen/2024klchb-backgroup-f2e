@@ -114,6 +114,7 @@
         <p><strong>年齡:</strong> {{ selectedItem?.yearSelected }}</p>
         <p><strong>諮詢問題:</strong> {{ selectedItem?.topicSelected }}</p>
         <p><strong>詳細內容:</strong> {{ selectedItem?.content }}</p>
+        <p v-if="selectedItem?.formData?.pediatricianStatus"><strong>幼兒專責醫師:</strong> {{ pediatricianText(selectedItem.formData) }}</p>
       </div>
     </div>
 
@@ -398,6 +399,7 @@ interface ConsultationItem {
   primaryMedical: string;
   topicSelected: string;
   content: string;
+  formData?: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -512,12 +514,26 @@ export default {
         primaryMedical: this.safeText(item.primaryMedical),
         topicSelected: this.safeText(item.topicSelected),
         content: this.safeText(item.content),
+        formData: item.formData ?? null,
         createdAt: this.safeText(item.createdAt),
         updatedAt: this.safeText(item.updatedAt)
       };
     },
     safeText(value: unknown): string {
       return typeof value === 'string' ? value : '';
+    },
+    // 幼兒專責醫師狀態轉中文（joined 另附診所名）
+    pediatricianText(formData: Record<string, any> | null | undefined): string {
+      const status = formData?.pediatricianStatus;
+      if (!status) return '';
+      const map: Record<string, string> = {
+        joined: '已加入',
+        interested: '有興趣了解請聯絡',
+        not_interested: '暫無意願'
+      };
+      const label = map[status] || status;
+      const clinic = formData?.pediatricianClinicName;
+      return clinic ? `${label}（${clinic}）` : label;
     },
     prevPage() {
       if (this.currentPage > 1) {

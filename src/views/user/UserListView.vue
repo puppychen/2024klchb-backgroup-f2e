@@ -36,6 +36,16 @@
                     </option>
                   </select>
                 </div>
+                <div class="col-sm-4 my-2">
+                  <label for="pediatricianFilter" class="form-label">幼兒專責醫師</label>
+                  <select id="pediatricianFilter" class="form-control" v-model="selectedPediatricianStatus">
+                    <option value="all">全部</option>
+                    <option value="joined">已加入</option>
+                    <option value="interested">有興趣了解請聯絡</option>
+                    <option value="not_interested">暫無意願</option>
+                    <option value="unanswered">未作答</option>
+                  </select>
+                </div>
               </div>
 
               <hr class="my-5">
@@ -246,6 +256,7 @@
                   <th>年齡</th>
                   <th>體重(kg)</th>
                   <th>主要醫療院所</th>
+                  <th>幼兒專責醫師</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,6 +266,7 @@
                   <td>{{ child.age || (child.birthDate ? calculateAge(child.birthDate) + ' 歲' : '-') }}</td>
                   <td>{{ child.weight || '-' }}</td>
                   <td>{{ child.primary_medical || '-' }}</td>
+                  <td>{{ pediatricianStatusText(child) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -588,7 +600,7 @@ import FooterComponent from '@/components/layout/Footer.vue'
 import { format } from 'date-fns'
 import Swal from 'sweetalert2'
 import { UserService } from '@/services'
-import type { User, Note, CreateNoteDto, UpdateNoteDto, VaccineNotifyLog, ChatMessageLog, ChatAttachmentLog } from '@/services/types'
+import type { User, Note, CreateNoteDto, UpdateNoteDto, VaccineNotifyLog, ChatMessageLog, ChatAttachmentLog, UserContentChild } from '@/services/types'
 
 export default {
   name: 'UserListView',
@@ -625,6 +637,8 @@ export default {
       editNoteContent: '',
       searchQuery: '',
       selectedSourceTag: '',
+      // 幼兒專責醫師篩選（UI sentinel，與資料層 '' 未作答分離）
+      selectedPediatricianStatus: 'all' as 'all' | 'joined' | 'interested' | 'not_interested' | 'unanswered',
       currentPage: 1,
       itemsPerPage: 50,
       defaultAvatar: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjY2NjIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAzYzEuNjYgMCAzIDEuMzQgMyAzcy0xLjM0IDMtMyAzLTMtMS4zNC0zLTMgMS4zNC0zIDMtM3ptMCAxNC4yYy0yLjUgMC00LjcxLTEuMjgtNi0zLjIyLjAzLTEuOTkgNC0zLjA4IDYtMy4wOCAxLjk5IDAgNS45NyAxLjA5IDYgMy4wOC0xLjI5IDEuOTQtMy41IDMuMjItNiAzLjIyeiIvPjwvc3ZnPg==',
@@ -648,6 +662,19 @@ export default {
         users = users.filter((user: User) =>
           this.sourceTagValue(user) === this.selectedSourceTag
         )
+      }
+
+      // 幼兒專責醫師狀態篩選（per-child，任一小孩符合即列出）
+      if (this.selectedPediatricianStatus !== 'all') {
+        const target = this.selectedPediatricianStatus
+        users = users.filter((user: User) => {
+          const childes = user.content?.childes || []
+          if (target === 'unanswered') {
+            // 排除完全無小孩資料者（尚未填基本資料）；有小孩但任一未填 → 待追蹤
+            return childes.length > 0 && childes.some((c) => !c.pediatricianStatus)
+          }
+          return childes.some((c) => c.pediatricianStatus === target)
+        })
       }
 
       if (!this.searchQuery) {
@@ -695,9 +722,26 @@ export default {
     },
     selectedSourceTag() {
       this.currentPage = 1
+    },
+    selectedPediatricianStatus() {
+      this.currentPage = 1
     }
   },
   methods: {
+    // 幼兒專責醫師狀態轉中文（joined 另附診所名）
+    pediatricianStatusText(child: UserContentChild) {
+      const map: Record<string, string> = {
+        joined: '已加入',
+        interested: '有興趣了解請聯絡',
+        not_interested: '暫無意願'
+      }
+      const status = child?.pediatricianStatus || ''
+      const label = map[status] || '未作答'
+      if (status === 'joined' && child?.pediatricianClinic?.name) {
+        return `${label}（${child.pediatricianClinic.name}）`
+      }
+      return label
+    },
     async fetchUsers() {
       this.loading = true
       try {
