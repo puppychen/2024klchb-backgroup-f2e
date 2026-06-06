@@ -19,7 +19,8 @@ import type {
   SourceUser,
   SourceKeywordLog,
   VaccineNotifyLog,
-  ChatMessagesPage
+  ChatMessagesPage,
+  ActivitySubmission
 } from './types'
 
 /**
@@ -322,6 +323,23 @@ export class SourceKeywordLogApi {
 }
 
 /**
+ * 幼專活動填寫資料 API
+ */
+export class ActivityApi {
+  /** 取得活動填寫資料列表 */
+  static async getSubmissions(): Promise<ActivitySubmission[]> {
+    const response = await apiClient.get('/activity-submission')
+    return response.data
+  }
+
+  /** 取得證明照片短效 signed URL */
+  static async getProofUrl(uuid: string): Promise<string | null> {
+    const response = await apiClient.get(`/activity-submission/${uuid}/proof-url`)
+    return response.data?.data?.url ?? null
+  }
+}
+
+/**
  * 統一的 API 匯出
  */
 export const api = {
@@ -329,7 +347,8 @@ export const api = {
   user: UserApi,
   admin: AdminApi,
   facility: FacilityApi,
-  consultation: ConsultationApi
+  consultation: ConsultationApi,
+  activity: ActivityApi
 }
 
 export default api

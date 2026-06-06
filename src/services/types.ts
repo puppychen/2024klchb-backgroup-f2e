@@ -250,3 +250,20 @@ export interface SourceKeywordLog {
   userName: string | null
   userPictureUrl: string | null
 }
+
+// 幼專活動填寫資料（對應後端 activity-submission findAll transform）
+export interface ActivitySubmission {
+  uuid: string
+  lineId: string
+  lineName: string
+  name: string
+  identity: string
+  dueDate: string | null
+  babyBirth: string | null
+  pediatricianStatus: string | null
+  pediatricianClinicName: string | null
+  hasProofImage: boolean
+  profileSyncStatus: string | null
+  linePushStatus: string | null
+  submittedAt: string
+}
